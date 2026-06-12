@@ -6,6 +6,7 @@ requires-python = ">=3.9"
 dependencies = [
     "anthropic>=0.109.1",
     "fast-flights>=2.2",
+    "playwright>=1.60.0",
     "python-dotenv>=1.2.1",
     "pyyaml>=6.0.3",
 ]
