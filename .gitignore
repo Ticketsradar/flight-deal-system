@@ -15,5 +15,12 @@ wheels/
 # 本地比較 log 輸出
 compare_log/
 
+# 掃描/收料結果(每日重新生成,唔入 repo)
+data/
+
+# 將來 Phase 5 MediaCrawler 嘅 cookie / session 檔(接入時再補實際路徑)
+*.session
+cookies/
+
 # Claude Code 本機個人設定
 .claude/settings.local.json

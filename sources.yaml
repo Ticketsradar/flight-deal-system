@@ -3,32 +3,34 @@
 # Scout script(Phase 1B)會讀呢個檔。加減來源改呢度,唔使改 code。
 # 規則:只填 verify 過嘅 handle;未確認嘅留喺註解,搵到正確 username 先解開。
 
-telegram:
-  # ✅ 已 verify handle — 可直接用
-  - username: FlyintChannel        # Flyint 飞数 官方訂閱頻道(flyint.in)— 大陸/跨境 bug票・錯價票大台
-    lang: zh
-    priority: high
-  - username: Flyint               # Flyint 飞数 群組(同上,討論區性質,噪音多啲)
-    lang: zh
-    priority: medium
-
-  # 🔍 高 signal 來源 — handle 要你由官網 footer / TG app 內搜攞正確 username,填好先解開註解
-  # - username: <填入>             # Flyday.hk(flyday.hk)— 注意:佢主力推送係 WhatsApp Channel + FB,TG 未必係主場
-  #   lang: zh
-  #   priority: high
-  # - username: <填入>             # Flyagain.la 又飛啦(flyagain.la)
-  #   lang: zh
-  #   priority: high
-  # - username: <填入>             # 里先生 Mr. Miles(里數 + 現金票優惠)
-  #   lang: zh
-  #   priority: medium
-  # - username: <填入>             # Secret Flying(secretflying.com)— 國際 error fare 大台,2014 年起家
-  #   lang: en
-  #   priority: high
-
-  # TG app 內搜尋關鍵字(人手搵新 channel 用):
-  #   平機票 / 機票優惠 / bug票 / 错价机票 / error fare / mistake fare
-  # 輔助:tgstat.com 可按關鍵字搵 channel 排名
+# ── Telegram:取消咗(2026-06-13,user 實測相關 group 唔多)─────────────────
+# 成段留註解唔刪 — 第時想做返,將下面每行開頭嘅「# 」刪走就用得返(連 .env 嘅 TELEGRAM 變數)。
+# telegram:
+#   # ✅ 已 verify handle — 可直接用
+#   - username: FlyintChannel        # Flyint 飞数 官方訂閱頻道(flyint.in)— 大陸/跨境 bug票・錯價票大台
+#     lang: zh
+#     priority: high
+#   - username: Flyint               # Flyint 飞数 群組(同上,討論區性質,噪音多啲)
+#     lang: zh
+#     priority: medium
+#
+#   # 🔍 高 signal 來源 — handle 要你由官網 footer / TG app 內搜攞正確 username,填好先解開註解
+#   # - username: <填入>             # Flyday.hk(flyday.hk)— 注意:佢主力推送係 WhatsApp Channel + FB,TG 未必係主場
+#   #   lang: zh
+#   #   priority: high
+#   # - username: <填入>             # Flyagain.la 又飛啦(flyagain.la)
+#   #   lang: zh
+#   #   priority: high
+#   # - username: <填入>             # 里先生 Mr. Miles(里數 + 現金票優惠)
+#   #   lang: zh
+#   #   priority: medium
+#   # - username: <填入>             # Secret Flying(secretflying.com)— 國際 error fare 大台,2014 年起家
+#   #   lang: en
+#   #   priority: high
+#
+#   # TG app 內搜尋關鍵字(人手搵新 channel 用):
+#   #   平機票 / 機票優惠 / bug票 / 错价机票 / error fare / mistake fare
+#   # 輔助:tgstat.com 可按關鍵字搵 channel 排名
 
 reddit:
   # 全部用 .json 後門(零審批):https://www.reddit.com/r/<subreddit>/new.json
@@ -56,6 +58,12 @@ xiaohongshu:                       # Phase 5 — MediaCrawler 接入後先啟用
     - 機票 撿漏
     - 香港 機票 特價
     - 深圳 机票 漏洞
+
+facebook_instagram:                # Phase 6 — 最後先做
+  enabled: false
+  method: apify_or_manual          # Apify(付費代爬服務)或半人手(貼文 copy 入嚟畀 scout 腦篩)
+  pages: []                        # 到時填 verify 過嘅 FB 專頁 / IG 帳號
+  # 注:FB/IG 官方 API 基本攞唔到公開專頁貼文,所以先要用 Apify 或半人手呢兩條路
 
 # ---------------------------------------------------------------------------
 # 篩選目標(scout 嘅 system prompt 會引用呢part)

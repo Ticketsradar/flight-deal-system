@@ -1,0 +1,83 @@
+# routes.yaml — 引擎A 掃描航線清單
+# ============================================
+# 目的地清單抽自參考網站 flight-deals-web.vercel.app 嘅 data.json
+#(佢更新日期:2026-06-11,共 57 個目的地;stay_nights 照搬佢每條線嘅典型行程日數)
+# 加減目的地:照格式加/刪一行就得。scanner 會掃 origins × destinations 全部組合。
+# 唔想掃某條組合:喺最底 exclude 加一行,例:- SZX-JFK
+
+defaults:
+  samples_per_month: 2      # 每月抽幾多個出發日做樣本(1–4;愈多愈準但 query 愈多)
+  delay_seconds: [3, 8]     # 每個 query 之間隨機等幾耐(秒)— 鐵律:咪轟炸 Google
+  currency: HKD
+
+origins:
+  - {code: HKG, name: 香港}
+  - {code: SZX, name: 深圳}
+  - {code: CAN, name: 廣州}
+
+destinations:
+  # ---- 日本(10 個)----
+  - {code: CTS, name: 札幌, region: 日本, stay_nights: 6}
+  - {code: FUK, name: 福岡, region: 日本, stay_nights: 6}
+  - {code: HIJ, name: 廣島, region: 日本, stay_nights: 6}
+  - {code: ISG, name: 石垣, region: 日本, stay_nights: 5}
+  - {code: KIX, name: 大阪, region: 日本, stay_nights: 6}
+  - {code: NGO, name: 名古屋, region: 日本, stay_nights: 6}
+  - {code: NRT, name: 東京, region: 日本, stay_nights: 6}
+  - {code: OKA, name: 沖繩, region: 日本, stay_nights: 5}
+  - {code: SDJ, name: 仙台, region: 日本, stay_nights: 6}
+  - {code: TAK, name: 高松, region: 日本, stay_nights: 6}
+  # ---- 東北亞(7 個)----
+  - {code: CJU, name: 濟州, region: 東北亞, stay_nights: 5}
+  - {code: ICN, name: 首爾, region: 東北亞, stay_nights: 5}
+  - {code: KHH, name: 高雄, region: 東北亞, stay_nights: 5}
+  - {code: PEK, name: 北京, region: 東北亞, stay_nights: 5}
+  - {code: PUS, name: 釜山, region: 東北亞, stay_nights: 5}
+  - {code: PVG, name: 上海, region: 東北亞, stay_nights: 5}
+  - {code: TPE, name: 台北, region: 東北亞, stay_nights: 5}
+  # ---- 東南亞(12 個)----
+  - {code: BKK, name: 曼谷, region: 東南亞, stay_nights: 5}
+  - {code: CEB, name: 宿霧, region: 東南亞, stay_nights: 5}
+  - {code: CNX, name: 清邁, region: 東南亞, stay_nights: 5}
+  - {code: DAD, name: 峴港, region: 東南亞, stay_nights: 5}
+  - {code: DPS, name: 峇里, region: 東南亞, stay_nights: 6}
+  - {code: HAN, name: 河內, region: 東南亞, stay_nights: 5}
+  - {code: HKT, name: 布吉, region: 東南亞, stay_nights: 5}
+  - {code: KUL, name: 吉隆坡, region: 東南亞, stay_nights: 5}
+  - {code: MNL, name: 馬尼拉, region: 東南亞, stay_nights: 5}
+  - {code: PEN, name: 檳城, region: 東南亞, stay_nights: 5}
+  - {code: SGN, name: 胡志明, region: 東南亞, stay_nights: 5}
+  - {code: SIN, name: 新加坡, region: 東南亞, stay_nights: 5}
+  # ---- 南亞中東(3 個)----
+  - {code: DXB, name: 杜拜, region: 南亞中東, stay_nights: 7}
+  - {code: IST, name: 伊斯坦堡, region: 南亞中東, stay_nights: 9}
+  - {code: MLE, name: 馬爾代夫, region: 南亞中東, stay_nights: 7}
+  # ---- 歐洲(16 個)----
+  - {code: AMS, name: 阿姆斯特丹, region: 歐洲, stay_nights: 9}
+  - {code: ATH, name: 雅典, region: 歐洲, stay_nights: 9}
+  - {code: BCN, name: 巴塞隆拿, region: 歐洲, stay_nights: 9}
+  - {code: BUD, name: 布達佩斯, region: 歐洲, stay_nights: 9}
+  - {code: CDG, name: 巴黎, region: 歐洲, stay_nights: 9}
+  - {code: CPH, name: 哥本哈根, region: 歐洲, stay_nights: 9}
+  - {code: FCO, name: 羅馬, region: 歐洲, stay_nights: 9}
+  - {code: HEL, name: 赫爾辛基, region: 歐洲, stay_nights: 9}
+  - {code: LHR, name: 倫敦, region: 歐洲, stay_nights: 9}
+  - {code: LIS, name: 里斯本, region: 歐洲, stay_nights: 9}
+  - {code: MAD, name: 馬德里, region: 歐洲, stay_nights: 9}
+  - {code: MUC, name: 慕尼黑, region: 歐洲, stay_nights: 9}
+  - {code: MXP, name: 米蘭, region: 歐洲, stay_nights: 9}
+  - {code: PRG, name: 布拉格, region: 歐洲, stay_nights: 9}
+  - {code: VIE, name: 維也納, region: 歐洲, stay_nights: 9}
+  - {code: ZRH, name: 蘇黎世, region: 歐洲, stay_nights: 9}
+  # ---- 美加澳(9 個)----
+  - {code: AKL, name: 奧克蘭, region: 美加澳, stay_nights: 10}
+  - {code: BNE, name: 布里斯本, region: 美加澳, stay_nights: 9}
+  - {code: CHC, name: 基督城, region: 美加澳, stay_nights: 10}
+  - {code: JFK, name: 紐約, region: 美加澳, stay_nights: 10}
+  - {code: LAX, name: 洛杉磯, region: 美加澳, stay_nights: 10}
+  - {code: MEL, name: 墨爾本, region: 美加澳, stay_nights: 9}
+  - {code: SFO, name: 三藩市, region: 美加澳, stay_nights: 10}
+  - {code: SYD, name: 悉尼, region: 美加澳, stay_nights: 9}
+  - {code: YVR, name: 溫哥華, region: 美加澳, stay_nights: 10}
+
+exclude: []                  # 例:[SZX-JFK, CAN-CHC] — 跳過個別組合
