@@ -1,0 +1,72 @@
+# sources.yaml — Scout 收料來源設定
+# =====================================
+# Scout script(Phase 1B)會讀呢個檔。加減來源改呢度,唔使改 code。
+# 規則:只填 verify 過嘅 handle;未確認嘅留喺註解,搵到正確 username 先解開。
+
+telegram:
+  # ✅ 已 verify handle — 可直接用
+  - username: FlyintChannel        # Flyint 飞数 官方訂閱頻道(flyint.in)— 大陸/跨境 bug票・錯價票大台
+    lang: zh
+    priority: high
+  - username: Flyint               # Flyint 飞数 群組(同上,討論區性質,噪音多啲)
+    lang: zh
+    priority: medium
+
+  # 🔍 高 signal 來源 — handle 要你由官網 footer / TG app 內搜攞正確 username,填好先解開註解
+  # - username: <填入>             # Flyday.hk(flyday.hk)— 注意:佢主力推送係 WhatsApp Channel + FB,TG 未必係主場
+  #   lang: zh
+  #   priority: high
+  # - username: <填入>             # Flyagain.la 又飛啦(flyagain.la)
+  #   lang: zh
+  #   priority: high
+  # - username: <填入>             # 里先生 Mr. Miles(里數 + 現金票優惠)
+  #   lang: zh
+  #   priority: medium
+  # - username: <填入>             # Secret Flying(secretflying.com)— 國際 error fare 大台,2014 年起家
+  #   lang: en
+  #   priority: high
+
+  # TG app 內搜尋關鍵字(人手搵新 channel 用):
+  #   平機票 / 機票優惠 / bug票 / 错价机票 / error fare / mistake fare
+  # 輔助:tgstat.com 可按關鍵字搵 channel 排名
+
+reddit:
+  # 全部用 .json 後門(零審批):https://www.reddit.com/r/<subreddit>/new.json
+  # 規矩:request 帶 REDDIT_USER_AGENT(.env)、每 request 隔 2–3 秒、處理 429
+  - subreddit: flightdeals         # 機票優惠主版
+    priority: high
+  - subreddit: awardtravel         # 里數 / award 票,error award 都喺度傾
+    priority: medium
+  - subreddit: HongKong            # 本地版,間中有機票 thread — 本地相關度高但量少
+    priority: medium
+  - subreddit: Flights             # general 航班討論
+    priority: low
+  - subreddit: TravelDeals         # 泛旅遊優惠
+    priority: low
+  - subreddit: Shoestring          # 窮遊
+    priority: low
+  - subreddit: travelhacks         # 旅遊 hack
+    priority: low
+
+xiaohongshu:                       # Phase 5 — MediaCrawler 接入後先啟用
+  enabled: false
+  keywords:
+    - bug機票
+    - 错价机票
+    - 機票 撿漏
+    - 香港 機票 特價
+    - 深圳 机票 漏洞
+
+# ---------------------------------------------------------------------------
+# 篩選目標(scout 嘅 system prompt 會引用呢part)
+filters:
+  origins: [HKG, SZX, CAN]         # 香港 / 深圳 / 廣州 出發
+  horizon_months: 12               # 未來 12 個月
+  # Error fare 加權 signal(2025 年實證:錯價破紀錄年,主因如下)
+  signals:
+    - 商務艙價錢接近或低過經濟艙(艙位錯配係常見錯價型態)
+    - 新航線 / 航空公司新合作初期定價(約一半錯價源自夥伴計價撞錯)
+    - 非美籍航空公司長途線異常平(非美航佔錯價絕大多數)
+    - 來回連稅低過該線正常價 50% 以上
+    - 貨幣換算異常(例如以弱勢貨幣計價後折算離譜地平)
+  # 注意:錯價通常 15 分鐘至幾粒鐘內被改正 — master 核實發現票已死係常態

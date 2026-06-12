@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets — .env 只可以存在於本機,死都唔 commit
+.env
+
+# 本地比較 log 輸出
+compare_log/
+
+# Claude Code 本機個人設定
+.claude/settings.local.json
