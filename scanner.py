@@ -33,7 +33,9 @@ import datetime as dt
 import json
 import random
 import re
+import shutil
 import sys
+import tempfile
 import time
 import urllib.parse
 from pathlib import Path
@@ -51,6 +53,7 @@ SAMPLE_DAYS = {1: [12], 2: [10, 24], 3: [8, 18, 28], 4: [5, 13, 21, 28]}
 ABORT_AFTER = 10       # 連續咁多個 query 真失敗 → 唞長覺/收工
 MAX_LONG_RESTS = 3     # 自動唞長覺次數上限
 COOL_EVERY = 30        # 每 N 個 query 唞 20–40 秒
+MIN_FREE_BYTES = 1_200_000_000  # 硬碟剩低過 1.2GB 就安全暫停(部機個碟好逼,爆碟教訓)
 BEYOND_SKIP_AFTER = 2  # 同一 route 連續 N 個月「Google 未有數據」→ 跳過剩低月份
 
 
@@ -116,7 +119,8 @@ class BrowserFetcher:
             self._pw = sync_playwright().start()
         if self._browser is None or not self._browser.is_connected():
             self._browser = self._pw.chromium.launch(
-                args=["--disable-blink-features=AutomationControlled"])
+                args=["--disable-blink-features=AutomationControlled",
+                      "--disk-cache-size=104857600"])  # cache 上限 100MB,咪食晒個碟
             self._ctx = None
         if self._ctx is None or self._fetches >= self.RECYCLE_EVERY:
             if self._ctx is not None:
@@ -369,6 +373,10 @@ def main() -> int:
     out_dir.mkdir(exist_ok=True)
     out_path = out_dir / f"scan_{today.strftime('%Y%m%d')}.json"
 
+    # 清走上次瀏覽器可能留低嘅 temp profile(防膨脹)
+    for leftover in Path(tempfile.gettempdir()).glob("*playwright*"):
+        shutil.rmtree(leftover, ignore_errors=True)
+
     # ---- resume:讀返今日已有結果 ----
     old_recs: dict = {}
     if args.resume and out_path.exists():
@@ -417,7 +425,9 @@ def main() -> int:
         scan["stats"]["months_ok"] = sum(1 for x in ms if x["status"] == "ok")
         scan["stats"]["months_failed"] = sum(1 for x in ms if x["status"] == "failed")
         scan["stats"]["months_beyond"] = sum(1 for x in ms if x["status"] == "beyond_data")
-        out_path.write_text(json.dumps(scan, ensure_ascii=False, indent=1), encoding="utf-8")
+        tmp_path = out_path.with_suffix(".json.tmp")
+        tmp_path.write_text(json.dumps(scan, ensure_ascii=False, indent=1), encoding="utf-8")
+        tmp_path.replace(out_path)  # 原子替換 — 寫到一半爆碟都唔會整爛舊檔
 
     def cool_down() -> None:
         if pace["q"] and pace["q"] % COOL_EVERY == 0:
@@ -513,6 +523,11 @@ def main() -> int:
     exit_code = 0
     try:
         for ri, route in enumerate(routes, 1):
+            free = shutil.disk_usage(str(ROOT)).free
+            if free < MIN_FREE_BYTES:
+                log(f"[scan] ⚠ 硬碟得返 {free / 1e9:.1f}GB — 安全暫停,執完位用 --resume 接力")
+                save("paused_low_disk")
+                return 3
             key = f'{route["origin"]}-{route["dest"]}'
             old_rec = old_recs.get(key)
             old_months = {m["month"]: m for m in old_rec["months"]} if old_rec else {}
@@ -562,6 +577,13 @@ def main() -> int:
         save("interrupted")
         log(f"[scan] 手動中斷,已掃部分保留喺 {out_path.name}(--resume 可接力)")
         exit_code = 1
+    except OSError as e:
+        # 多數係爆碟 — save 用原子寫法,舊檔無事;呢度唔好再試寫嘢
+        try:
+            log(f"[scan] ⚠ 系統 I/O 錯誤({e})— 收工,執完位用 --resume 接力")
+        except Exception:
+            pass
+        exit_code = 3
     finally:
         if browser is not None:
             browser.close()
