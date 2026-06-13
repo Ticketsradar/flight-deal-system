@@ -2,11 +2,11 @@
 
 ## Overview
 
-呢個係 **brownfield amendments milestone**:後端鏈(掃描 → 篩 → 核實 → Telegram → Supabase)同 Next.js 網站都已起好(見 PROJECT.md「Validated」)。今個 milestone 做三項改進 — 彈性行程日數、可靠每日更新、自家錯價偵測 — 加一項基建(price_history)。
+呢個係 **brownfield amendments milestone**:後端鏈(掃描 → 篩 → 核實 → Telegram → Supabase)同 Next.js 網站都已起好(見 PROJECT.md「Validated」)。今個 milestone 做三項改進 — 彈性行程日數、可靠每日更新、自家錯價偵測 — 加一項基建(price_history),再**保留(reserve)user 原計劃嘅兩個社交來源 scout add-on**(小紅書 Phase 5 + Facebook/Instagram Phase 6)。
 
-呢個 milestone 係 **spike-gated**:user 揀咗「先試免費 Travelpayouts API → 唔夠 fallback 自己掃 ±N」。所以 **Phase 1 係一個決策閘(spike)**,先攞 Travelpayouts token 量度真實覆蓋率,出一個明確 GO(用 Travelpayouts)定 FALLBACK(fast-flights + ±N return-offset)建議。Phase 2(彈性行程)同 Phase 3(每日更新)嘅實作路徑都 **branch on 呢個決定**。Phase 4(自家錯價偵測)基本上同數據源決定無關 — 佢食邊個 pipeline 流出嚟嘅價都得 — 但邏輯上排喺 pipeline 形狀定咗之後。
+呢個 milestone 係 **spike-gated**:user 揀咗「先試免費 Travelpayouts API → 唔夠 fallback 自己掃 ±N」。所以 **Phase 1 係一個決策閘(spike)**,先攞 Travelpayouts token 量度真實覆蓋率,出一個明確 GO(用 Travelpayouts)定 FALLBACK(fast-flights + ±N return-offset)建議。Phase 2(彈性行程)同 Phase 3(每日更新)嘅實作路徑都 **branch on 呢個決定**。Phase 4(自家錯價偵測)基本上同數據源決定無關 — 佢食邊個 pipeline 流出嚟嘅價都得 — 但邏輯上排喺 pipeline 形狀定咗之後。Phase 5/6 係 user 原始願景入面嘅 add-on 社交來源(原 CLAUDE.md Phase 5/6),reuse 同一條 scout → master → notifier → db plumbing。
 
-唔重新 plan 任何現有 Validated 能力。
+唔重新 plan 任何現有 Validated 能力(包括已起好嘅 Reddit RSS scout,佢繼續由 MISP-03「保留現有 RSS」覆蓋)。
 
 ## Phases
 
@@ -20,6 +20,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: 彈性行程日數** - 每個平價日標明行程日數 + 來回價,按價分層,撳跳對應 depart+return 嘅 Google Flights
 - [ ] **Phase 3: 可靠每日更新** - 每日可靠自動更新 + 容錯 partial upload + 網站顯示真實「最後更新」
 - [ ] **Phase 4: 自家錯價偵測** - price_history 表 + 統計異常偵測,候選餵入現有 master,RSS 來源照行
+- [ ] **Phase 5: 小紅書(RedNote)scout** - deploy 小紅書 scout(MediaCrawler + cookie/session 登入),收料 → 現有 Haiku 篩 → 餵現有 master → notifier → db(原計劃 add-on 來源)
+- [ ] **Phase 6: Facebook / Instagram scout** - deploy FB/IG scout(Apify 或半人手),餵同一條 scout → master → notifier → db 路徑(原計劃 add-on 來源,反爬/ToS 最高故排最後)
 
 ## Phase Details
 
@@ -73,12 +75,46 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. 加咗 append-only `price_history` 表(schema.sql + `db.py` writer + `upload.py` 接駁),並由現有 dated `scan_*.json` backfill 出基線 — DATA-01
 **Plans**: TBD
 
+### Phase 5: 小紅書(RedNote)scout
+**Goal**: Deploy 一個小紅書(RedNote / Xiaohongshu)scout — 用 MediaCrawler + cookie/session 登入拉貼文,經**現有 Haiku scout filter** 評分,將疑似錯價候選以**現有 `scout.REQUIRED` dict 形狀**產出,令**現有 master → notifier → db 路徑**核實並出街(零新核實 code)。呢個係 user 原始計劃嘅 add-on 本地來源(原 CLAUDE.md Phase 5),補返 RSS 覆蓋唔到嘅大陸/HK bug-fare 社群。
+**Depends on**: Phase 4（reuse Phase 4 settle 好嘅 scout → master plumbing 同候選 dict 形狀)
+**Requirements**: MISP-04
+**Reserved (original-plan add-on source)**: 係 — 由 user 原始願景(CLAUDE.md Phase 5)reserve 返做 committed scope,唔係 spike。
+**Constraints / Notes**:
+  - 需要 cookie/session 登入 — session / cookie 檔必須 gitignored(鐵律 1:key/session 只喺本機 + Secrets,唔入 git)。
+  - 反爬:隨機 delay / retry / 尊重 rate limit(鐵律 4),低 volume 慢 cadence。
+  - 來源(小紅書 search 詞 / 帳號 / hashtag)加喺 `sources.yaml`,唔改 code(鐵律:加減來源改 config)。
+  - 重用 `scout.py`(Haiku 篩)、`master.py`(核實)、`notifier.py`、`db.py` — 唔寫新核實 / 推送 / 入庫 code。
+**Success Criteria** (what must be TRUE):
+  1. Scout 成功由小紅書拉到貼文(經 MediaCrawler + 已登入 session),並可重複跑 — MISP-04
+  2. 現有 Haiku scout filter 對拉到嘅貼文評分,輸出符合 `scout.REQUIRED` dict 形狀嘅候選 — MISP-04
+  3. Live 測試入面,**至少 1 個小紅書候選由 scout → master 核實 → notifier(Telegram)/ db(Supabase error_fares)行通晒** end-to-end,零新核實 code — MISP-04
+  4. 小紅書 session / cookie secrets 只喺本機(gitignored),冇 commit 入 git;來源 config 喺 `sources.yaml`
+**Plans**: TBD
+
+### Phase 6: Facebook / Instagram scout
+**Goal**: Deploy 一個 Facebook / Instagram scout(用 Apify actors 或半人手 ingestion 攞 FB/IG flight-deal 來源嘅料),餵入**同一條 scout → master → notifier → db 路徑**,令 FB/IG 上嘅疑似錯價經現有 Haiku 篩 + 現有 master 核實後出街。呢個係 user 原始計劃嘅 add-on 本地來源(原 CLAUDE.md Phase 6),HKG-origin 信號(Flyday.hk / Flyagain.la / 又飛啦等)最強。
+**Depends on**: Phase 5（沿用同一條 scout → master plumbing;FB/IG 反爬/ToS friction 最高,故照原計劃排最後)
+**Requirements**: MISP-05
+**Reserved (original-plan add-on source)**: 係 — 由 user 原始願景(CLAUDE.md Phase 6)reserve 返做 committed scope,唔係 spike。
+**Constraints / Notes**:
+  - FB/IG 冇公開 API → 用 **Apify actors** 或**半人手** ingestion(原計劃既定路線)。
+  - 反爬/ToS friction 最高 → 照原計劃**排最後**(Phase 6),低 volume、尊重 rate limit(鐵律 4)。
+  - 任何 Apify token / 登入 credential 只喺 `.env`(本機)同 GitHub Secrets(CI),唔入 git(鐵律 1)。
+  - 來源(FB group / IG 帳號)加喺 `sources.yaml`,唔改 code;重用現有 scout / master / notifier / db。
+**Success Criteria** (what must be TRUE):
+  1. FB/IG flight-deal 來源嘅 items 經選定方法(Apify 或半人手)成功 ingest 入 pipeline — MISP-05
+  2. Ingest 到嘅 items 經現有 Haiku scout filter 篩,輸出符合 `scout.REQUIRED` dict 形狀嘅候選 — MISP-05
+  3. Live 測試入面,**至少 1 個 FB/IG 候選由 scout → master 核實 → notifier / db 行通晒** end-to-end,零新核實 code — MISP-05
+  4. 任何 Apify / 登入 credential、key 只喺 `.env` / GitHub Secrets,冇 commit 入 git;來源 config 喺 `sources.yaml`
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
-(Phase 1 是決策閘:Phase 2 同 Phase 3 嘅實作路徑 branch on Phase 1 結果。Phase 4 邏輯上排最後。)
+(Phase 1 是決策閘:Phase 2 同 Phase 3 嘅實作路徑 branch on Phase 1 結果。Phase 4 邏輯上排現有 pipeline 之後。Phase 5/6 係 user 原計劃嘅 add-on 社交來源,reuse 同一條 scout → master plumbing;FB/IG 反爬/ToS friction 最高,照原計劃排最後。)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -86,3 +122,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 2. 彈性行程日數 | 0/TBD | Not started | - |
 | 3. 可靠每日更新 | 0/TBD | Not started | - |
 | 4. 自家錯價偵測 | 0/TBD | Not started | - |
+| 5. 小紅書(RedNote)scout | 0/TBD | Not started | - |
+| 6. Facebook / Instagram scout | 0/TBD | Not started | - |

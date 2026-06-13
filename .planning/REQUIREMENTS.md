@@ -19,11 +19,13 @@
 - [ ] **DAILY-02**: 網站每張卡(或全站)顯示**真實「最後更新」**時間,反映實際新鮮度
 - [ ] **DAILY-03**: 更新過程**容錯**:就算部分掃描失敗/超時,已完成部分照樣出街(唔會成日 0 更新)
 
-### Misprice (自家錯價偵測)
+### Misprice (自家錯價偵測 + 社交來源 scout)
 
 - [ ] **MISP-01**: 系統由自己每日掃嘅價,**自動偵測**「某條線異常平」嘅疑似錯價(統計異常,per route×月×艙)
 - [ ] **MISP-02**: 偵測到嘅候選**餵入現有 master agent** 核實 live/dead,再經現有 Telegram + 網站錯價區出(零新核實 code)
 - [ ] **MISP-03**: 保留並穩固現有 RSS 來源(theflightdeal / fly4free / Reddit `.rss`),與自家偵測並行
+- [ ] **MISP-04**: 小紅書(RedNote / Xiaohongshu)scout — crawl 小紅書 收料,篩疑似錯價,餵入現有 master 核實(原 Phase 5;MediaCrawler + cookie/session 登入,session 檔 gitignored)
+- [ ] **MISP-05**: Facebook / Instagram scout — 收 FB/IG flight-deal 來源收料,篩疑似錯價,餵入現有 master 核實(原 Phase 6;Apify 或半人手)
 
 ### Data (基建)
 
@@ -37,7 +39,6 @@
 
 - **SRC-01**: `feeds.py` 加 Playwright fallback,解鎖 Secret Flying / FlyerTalk(畀 Cloudflare 擋緊嘅來源)
 - **SRC-02**: 商務艙(business/first)錯價專掃 + J/F-vs-Y 比例旗
-- **SRC-03**: 小紅書 scout(原 Phase 5)、Facebook / Instagram scout(原 Phase 6)
 
 ### Grid
 
@@ -66,14 +67,16 @@
 | MISP-02 | Phase 4 | Pending |
 | MISP-03 | Phase 4 | Pending |
 | DATA-01 | Phase 4 | Pending |
+| MISP-04 | Phase 5 | Pending |
+| MISP-05 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 10 total
-- Mapped to phases: 10 ✓
+- v1 requirements: 12 total
+- Mapped to phases: 12 ✓
 - Unmapped: 0 ✓
 
 > Phase 1（Travelpayouts 覆蓋率 Spike)係決策閘,唔直接 map 任何 v1 requirement — 佢交付一個有證據嘅數據源決定,解鎖 FLEX-*(Phase 2)同 DAILY-*(Phase 3)嘅實作路徑。
 
 ---
 *Requirements defined: 2026-06-14*
-*Last updated: 2026-06-14 — traceability filled (4-phase spike-gated roadmap, 10/10 mapped)*
+*Last updated: 2026-06-14 — 社交來源 scout 由 v2 升做 v1 committed scope(MISP-04 小紅書 / MISP-05 FB·IG),v1 count 10 → 12,新增 Phase 5/6,12/12 mapped*

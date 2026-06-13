@@ -2,7 +2,7 @@
 
 ## What This Is
 
-全自動每日跑嘅平機票 + error fare 偵測系統:掃 HKG / SZX / CAN 出發、未來 7–12 個月航線最平價,並由 RSS/社交收料偵測疑似錯價票,核實後經 Telegram + Next.js 網站(Vercel)出畀香港旅客。後端鏈(掃描 → 篩 → 核實 → Telegram → Supabase)同網站都已起好;呢個 milestone 做三項改進(彈性行程日數、可靠每日更新、自家錯價偵測)。
+全自動每日跑嘅平機票 + error fare 偵測系統:掃 HKG / SZX / CAN 出發、未來 7–12 個月航線最平價,並由 RSS/社交收料偵測疑似錯價票,核實後經 Telegram + Next.js 網站(Vercel)出畀香港旅客。後端鏈(掃描 → 篩 → 核實 → Telegram → Supabase)同網站都已起好;呢個 milestone 做三項改進(彈性行程日數、可靠每日更新、自家錯價偵測)並 reserve 返 user 原計劃嘅兩個社交來源 scout add-on(小紅書、FB/IG)。
 
 ## Core Value
 
@@ -31,6 +31,8 @@
 - [ ] **每日可靠自動更新**(取代而家 ~3 日一次)+ 網站顯示真實「最後更新」時間
 - [ ] 由**自家掃價數據**做統計異常偵測,自動捉疑似錯價票,餵現有 master 核實
 - [ ] (基建)儲每日掃價**歷史**(`price_history`)畀異常偵測用
+- [ ] **小紅書(RedNote)scout**(原 Phase 5,MediaCrawler + cookie/session 登入)— 收料餵現有 master 核實
+- [ ] **Facebook / Instagram scout**(原 Phase 6,Apify 或半人手)— 收料餵現有 master 核實
 
 ### Out of Scope
 
@@ -39,7 +41,6 @@
 - 付費 API 攞「硬性完整 2–14 日 grid」 — user 揀咗免費路線(Travelpayouts spike → fallback 自己掃);成本考量
 - Twitter / X 收料 — 2026 Nitter 已死、X API 冇免費 tier,ROI 低
 - 即時(real-time)每次入網站先查價 — 沿用 cache/靜態模型,成本 + 反爬考量
-- 小紅書(Phase 5)/ Facebook·Instagram(Phase 6) — 已喺長遠 roadmap,呢個 milestone 唔掂
 
 ## Context
 
@@ -63,6 +64,7 @@
 |----------|-----------|---------|
 | 彈性行程日數行「先試免費 Travelpayouts API → 唔夠 fallback 自己掃 ±N」 | user 揀;$0、一個 call 攞全月彈性行程兼順手解決每日更新;有覆蓋率風險故 spike-gate | — Pending（Phase 1 spike） |
 | 錯價票主力行「自家數據異常偵測」而非加外部來源 | 外部來源大多畀 Cloudflare 擋 / Twitter 死;自家數據 ROI 最高、reuse 現有 master | — Pending（Phase 4） |
+| Reserve 返 user 原計劃嘅小紅書(Phase 5)/ FB·IG(Phase 6)社交 scout 做 committed scope | user 明確要求保留原始願景嘅 add-on 來源;補返 RSS 覆蓋唔到嘅 HKG-origin 本地 bug-fare 社群;reuse 同一條 scout → master plumbing | — Pending（Phase 5/6） |
 | 唔用付費 API 做完整 grid | 成本;參考網站本身都唔係真 2–14 grid | ✓ Good |
 | 保留並更新(唔覆蓋)現有 `CLAUDE.md` | 係 user 親自維護嘅 single source of truth | ✓ Good |
 
@@ -84,4 +86,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-14 after initialization (amendments milestone)*
+*Last updated: 2026-06-14 after initialization (amendments milestone) + 社交來源 scout(小紅書 / FB·IG)由 Out of Scope 升做 Active in-scope(Phase 5/6)*
