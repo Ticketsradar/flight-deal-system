@@ -119,7 +119,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Travelpayouts 覆蓋率 Spike（決策閘) | 1/1 | ✅ Complete (FALLBACK) | 2026-06-14 |
-| 2. 彈性行程日數 | 0/TBD | Not started | - |
+| 2. 彈性行程日數 | 0/1 | Planned (checker PASS) | - |
 | 3. 可靠每日更新 | 0/TBD | Not started | - |
 | 4. 自家錯價偵測 | 0/TBD | Not started | - |
 | 5. 小紅書(RedNote)scout | 0/TBD | Not started | - |

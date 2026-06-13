@@ -20,12 +20,12 @@ See: .planning/PROJECT.md (updated 2026-06-14)
 
 ## Current Position
 
-Phase: 2 of 6 (彈性行程日數)— Phase 1 spike ✅ 完成
-Plan: 0 of TBD in current phase
-Status: Ready to plan Phase 2
-Last activity: 2026-06-14 — Phase 1 spike 完成:Travelpayouts 來回數據太疏 → 拍板 FALLBACK(fast-flights 平價日 ±2 自掃)。詳見 research/TRAVELPAYOUTS-SPIKE.md
+Phase: 2 of 6 (彈性行程日數)— ✅ planned,ready to execute
+Plan: 1 plan (02-PLAN.md);plan-checker PASSED(2 個非阻塞 warning)
+Status: Ready to execute → /gsd-execute-phase 2
+Last activity: 2026-06-14 — Phase 2 計劃完成 + plan-checker 通過(FALLBACK ±2 自掃:平價日加 dur±2 return-offset、加 `days` 欄、UI 微調;3 task)
 
-Progress: [█░░░░░░░░░] 16% (1/6 phases)
+Progress: [█░░░░░░░░░] 16% (1/6 phases done;Phase 2 planned)
 
 ## Performance Metrics
 
