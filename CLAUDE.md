@@ -67,7 +67,7 @@ GitHub Actions cron(每日)
 - [x] Phase 1.0 — project 地基 + `llm.py` + `test_llm.py` 全綠(兩個腦經 Max plan call 通)
 - [ ] **Phase 1A — routes.yaml(由參考網站抽)+ fast-flights 掃描器** ← 而家做緊(2026-06-13 已做:抽到參考網站全部 57 個目的地入 routes.yaml、scanner.py 寫好、smoke 3 條 route 通過、加咗第二輪補掃;待:user 確認清單 + 人手對 2 條 link,再揀時間跑全量 171 條)
 - [x] **Phase 1B — RSS scout(Reddit `.rss` + 錯價網 RSS)+ Haiku 篩 + consolidate** ✅ 2026-06-13(`feeds.py`/`scout.py`/`consolidate.py`/`run_scout.py`;reddit `.json` 被 403 → 改用官方 `.rss`;錯價網用 theflightdeal + fly4free;Haiku 正面測試捉到 HKG 錯價、live 跑通寫 `data/candidates_*.json`;計劃見 docs/superpowers/plans/2026-06-13-phase-1b-rss-scout.md。註:reddit `.rss` 有 429,每跑約 4/7 sub 成功,多次跑輪流覆蓋,夠用)
-- [ ] Phase 2 — master 核實 agent(triage → fast-flights 重query → deep links)
+- [x] **Phase 2 — master 核實 agent** ✅ 2026-06-13(`master.py` + `run_master.py`;triage≥70 → reuse `scanner.query_roundtrip`(加咗 seat 參數)重查 → Sonnet 判 live/dead/unverified → Google Flights + Trip.com 連結 → `data/verified_*.json`;smoke 證實 Sonnet 正確判 fake $600 HKG-NRT 為 dead(實價 $2426);計劃 docs/superpowers/plans/2026-06-13-phase-2-master-verify.md)
 - [ ] Phase 2.5 — 接 Supabase(本地 JSON 遷移過去)
 - [ ] Phase 3 — Next.js 網站 + deploy Vercel
 - [ ] Phase 4 — GitHub Actions 每日 cron + Secrets
