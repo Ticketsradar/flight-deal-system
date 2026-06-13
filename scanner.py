@@ -345,7 +345,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="引擎A:Google Flights 掃描器(fast-flights,雙層)")
     ap.add_argument("--smoke", action="store_true", help="冒煙測試:3 條代表 route、每月 1 個樣本")
     ap.add_argument("--max-routes", type=int, default=0, help="只掃頭 N 條 route(0=全部)")
-    ap.add_argument("--months", type=int, default=12, help="掃未來幾多個月(預設 12)")
+    ap.add_argument("--months", type=int, default=7, help="掃未來幾多個月(預設 7;遠月未放飛冇參考價值)")
     ap.add_argument("--samples", type=int, default=0, help="每月抽樣日數 1–4(預設用 routes.yaml)")
     ap.add_argument("--resume", action="store_true", help="沿用今日已掃結果,只補失敗月份+未掃 route")
     ap.add_argument("--no-browser", action="store_true", help="停用真瀏覽器後備(淨 HTTP)")

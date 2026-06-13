@@ -115,9 +115,13 @@ export default function DestinationCard({
                           style={{ color: cheap ? "#34d399" : "#cbd5e1" }}
                         >
                           {dayLabel(p.depart)}
+                          <span className="text-[10px] font-normal opacity-70">
+                            {" "}
+                            {stayDays(p) ?? "?"}日
+                          </span>
                         </div>
                         <div className="text-[10px]" style={{ color: cheap ? "#6ee7b7" : "#94a3b8" }}>
-                          {p.price ?? "—"}
+                          ${p.price ?? "—"}
                         </div>
                       </a>
                     );

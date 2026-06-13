@@ -33,11 +33,23 @@ export default async function Page({
     getMeta(),
   ]);
 
+  // 只保留最近 7 個月(遠月平機票未放飛,價偏高、冇參考價值)
+  const now = new Date();
+  const allowedMonths = new Set<string>();
+  for (let y = now.getFullYear(), mo = now.getMonth() + 1, k = 0; k < 7; k++) {
+    allowedMonths.add(`${y}-${String(mo).padStart(2, "0")}`);
+    if (++mo > 12) {
+      mo = 1;
+      y++;
+    }
+  }
+  const within7 = originFlights.filter((f) => f.month && allowedMonths.has(f.month));
+
   // 由資料抽地區選項
-  const regions = [...new Set(originFlights.map((f) => f.region).filter(Boolean) as string[])].sort();
+  const regions = [...new Set(within7.map((f) => f.region).filter(Boolean) as string[])].sort();
 
   // 套地區 + 預算篩選
-  let shown = originFlights;
+  let shown = within7;
   if (current.region) shown = shown.filter((f) => f.region === current.region);
   if (current.maxPrice) shown = shown.filter((f) => (f.price_hkd ?? Infinity) <= current.maxPrice!);
 
