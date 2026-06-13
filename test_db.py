@@ -67,6 +67,25 @@ def main() -> None:
     print(("✅" if cond else "❌"), "upsert 砌 URL/headers + 回行數")
     ok = ok and cond
 
+    # delete 砌 URL + 守門
+    seen2: dict = {}
+
+    def fake_del(url, headers=None, timeout=None):
+        seen2["url"] = url
+
+        class R:
+            def raise_for_status(self):
+                pass
+        return R()
+
+    okd = db.delete("error_fares", "source_url=eq.x", c=conf, client=fake_del)
+    cond = okd and "/rest/v1/error_fares?source_url=eq.x" in seen2["url"]
+    print(("✅" if cond else "❌"), "delete 砌 URL")
+    ok = ok and cond
+    cond = db.delete("x", "key=eq.1", c={"url": "", "key": ""}) is False
+    print(("✅" if cond else "❌"), "delete 未配置 → False")
+    ok = ok and cond
+
     # URL 容錯:貼咗 /rest/v1 都剝返基底
     import os
     os.environ["SUPABASE_URL"] = "https://abc.supabase.co/rest/v1/"

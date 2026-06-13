@@ -164,6 +164,22 @@ def select(table: str, params: str = "select=*&limit=5", c: dict | None = None) 
         return []
 
 
+def delete(table: str, params: str, c: dict | None = None, client=None) -> bool:
+    """DELETE 符合 PostgREST filter 嘅行(例:source_url=eq.xxx)。主要畀自測清手尾用。"""
+    c = c or cfg()
+    if not configured(c):
+        return False
+    url = f"{c['url']}/rest/v1/{table}?{params}"
+    fn = client or httpx.delete
+    try:
+        resp = fn(url, headers=_headers(c["key"]), timeout=HTTP_TIMEOUT)
+        resp.raise_for_status()
+        return True
+    except Exception as e:  # noqa: BLE001
+        log(f"delete {table} 失敗:{e}")
+        return False
+
+
 def push_error_fares(deals: list[dict], c: dict | None = None, client=None) -> int:
     n = upsert("error_fares", [error_fare_row(d) for d in deals], "source_url",
                c=c, client=client)
@@ -201,11 +217,11 @@ if __name__ == "__main__":
         "tripcom_url": "https://www.trip.com/flights/",
     }
     n = push_error_fares([sample], c=c)
-    set_meta("last_updated_selftest", "ok", c=c)
     rows = select("error_fares",
                   "select=source_url,origin,destination,status&order=found_at.desc&limit=10")
     hit = any(r.get("source_url") == "https://example.com/db-selftest" for r in rows)
-    log(f"寫入 {n} 行;讀返 {len(rows)} 行;搵到測試行:{hit}")
-    print("✅ Supabase 接通(寫到 + 讀到)" if (n == 1 and hit)
+    delete("error_fares", "source_url=eq.https%3A%2F%2Fexample.com%2Fdb-selftest", c=c)  # 清返測試行
+    log(f"寫入 {n} 行;讀返搵到測試行:{hit};已清走測試行")
+    print("✅ Supabase 接通(寫到 + 讀到 + 自己清手尾)" if (n == 1 and hit)
           else "❌ 接唔通,睇上面 [db] log")
     raise SystemExit(0 if (n == 1 and hit) else 1)
