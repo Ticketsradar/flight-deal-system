@@ -68,7 +68,8 @@ GitHub Actions cron(每日)
 - [ ] **Phase 1A — routes.yaml(由參考網站抽)+ fast-flights 掃描器** ← 而家做緊(2026-06-13 已做:抽到參考網站全部 57 個目的地入 routes.yaml、scanner.py 寫好、smoke 3 條 route 通過、加咗第二輪補掃;待:user 確認清單 + 人手對 2 條 link,再揀時間跑全量 171 條)
 - [x] **Phase 1B — RSS scout(Reddit `.rss` + 錯價網 RSS)+ Haiku 篩 + consolidate** ✅ 2026-06-13(`feeds.py`/`scout.py`/`consolidate.py`/`run_scout.py`;reddit `.json` 被 403 → 改用官方 `.rss`;錯價網用 theflightdeal + fly4free;Haiku 正面測試捉到 HKG 錯價、live 跑通寫 `data/candidates_*.json`;計劃見 docs/superpowers/plans/2026-06-13-phase-1b-rss-scout.md。註:reddit `.rss` 有 429,每跑約 4/7 sub 成功,多次跑輪流覆蓋,夠用)
 - [x] **Phase 2 — master 核實 agent** ✅ 2026-06-13(`master.py` + `run_master.py`;triage≥70 → reuse `scanner.query_roundtrip`(加咗 seat 參數)重查 → Sonnet 判 live/dead/unverified → Google Flights + Trip.com 連結 → `data/verified_*.json`;smoke 證實 Sonnet 正確判 fake $600 HKG-NRT 為 dead(實價 $2426);計劃 docs/superpowers/plans/2026-06-13-phase-2-master-verify.md)
-- [ ] Phase 2.5 — 接 Supabase(本地 JSON 遷移過去)
+- [x] **Phase 2.2 — Telegram 即時推送** ✅ 2026-06-13(`notifier.py`:format_deal(HTML 訊息:航線+傳聞/重查價+日期+狀態+airline+Google Flights/Trip.com/原文 三連結+免責)、send_message(httpx POST `sendMessage`,retry/429)、notify_verified(政策路由:live 推 owner+channel / unverified 推 owner / dead 唔推);駁入 `run_master.py`,加 `--no-notify`;6 項離線測試綠;**真機 live send 通過 — user 確認部電話收到測試卡片**。bot=@hkgcheapflightscannerbot,channel 暫留空只推 owner)
+- [ ] Phase 2.5 — 接 Supabase(本地 JSON 遷移過去)← 而家做緊(code 起緊;待 user 提供 SUPABASE_URL + 喺 Supabase 跑 schema.sql)
 - [ ] Phase 3 — Next.js 網站 + deploy Vercel
 - [ ] Phase 4 — GitHub Actions 每日 cron + Secrets
 - [ ] Phase 5 — 小紅書 scout(MediaCrawler + cookie 登入)
