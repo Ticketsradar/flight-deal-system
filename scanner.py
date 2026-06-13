@@ -348,7 +348,8 @@ def main() -> int:
     ap.add_argument("--months", type=int, default=7, help="掃未來幾多個月(預設 7;遠月未放飛冇參考價值)")
     ap.add_argument("--samples", type=int, default=0, help="每月抽樣日數 1–4(預設用 routes.yaml)")
     ap.add_argument("--grid", action="store_true", help="全日曆:每月掃晒每一日(最似參考網站,query 大增)")
-    ap.add_argument("--only", default="", help="只掃指定 route,如 HKG-MNL(demo / Phase 4 分片用)")
+    ap.add_argument("--only", default="", help="只掃指定 route,如 HKG-MNL")
+    ap.add_argument("--slice", default="", help="分片 K/N(Phase 4 matrix:每 job 掃 routes[K::N],各用各 IP)")
     ap.add_argument("--resume", action="store_true", help="沿用今日已掃結果,只補失敗月份+未掃 route")
     ap.add_argument("--no-browser", action="store_true", help="停用真瀏覽器後備(淨 HTTP)")
     args = ap.parse_args()
@@ -369,6 +370,9 @@ def main() -> int:
     if args.only:
         want = args.only.strip().upper()
         routes = [r for r in routes if f"{r['origin']}-{r['dest']}" == want]
+    if args.slice:
+        k, n = (int(x) for x in args.slice.split("/"))
+        routes = routes[k::n]  # 平均分:slice 0/12 = routes[0,12,24,...]
 
     today = dt.date.today()
     sample_days = SAMPLE_DAYS[samples]

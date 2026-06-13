@@ -1,0 +1,38 @@
+# Phase 4 — Stream A:平機票全日曆掃描(雲端平行)
+# ============================================================
+# 12 個 job 平行跑,每個 GitHub runner 有自己 IP,各掃 1/12 條 route(--grid 全日曆),
+# 各自 upload 自己嗰片入 Supabase(upsert 合併)。網站即時讀,自動更新。
+#
+# ⚠️ 未知數:GitHub runner IP 係共用 Azure pool,Google 有可能 rate-limit / 封。
+#    要試先知。被封嘅話:減 cron 頻率 / 加 rotation(每日只掃部分 route)/ 減 job 數。
+# 調校:改 matrix.k 個 list + --slice 個分母(要一致);改 cron 頻率。
+
+name: Stream A — 平機票全日曆掃描
+
+on:
+  schedule:
+    - cron: "0 18 * * *" # 每日 18:00 UTC = 02:00 香港時間
+  workflow_dispatch: {} # 可喺 GitHub Actions 頁面手動撳 Run
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350 # 唔好爆 GitHub 6 鐘 job 上限
+    strategy:
+      fail-fast: false # 一片爆唔好拖死其他片
+      max-parallel: 12
+      matrix:
+        k: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] # 12 片;改數量記得連 --slice 分母一齊改
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: 裝依賴
+        run: uv sync
+      - name: 掃描分片 ${{ matrix.k }}/12(全日曆,HTTP-only)+ upload
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+        run: |
+          uv run python scanner.py --slice ${{ matrix.k }}/12 --grid --no-browser
+          uv run python upload.py
