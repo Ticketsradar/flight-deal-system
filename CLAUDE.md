@@ -32,7 +32,7 @@ GitHub Actions cron(每日)
 
 | 角色 | 試跑階段(而家) | Production(之後切) |
 |---|---|---|
-| Scout 腦 | `claude_code` provider,model `haiku`(行 user 個 Max plan,$0) | MiniMax M3(`minimax` provider) |
+| Scout 腦 | `claude_code` provider,model `haiku`(行 user 個 Max plan,$0) | Claude Haiku(`anthropic` provider,API) |
 | Master 腦 | `claude_code` provider,model `sonnet` | Claude Sonnet(`anthropic` provider,API) |
 | 切換方法 | — | 只改 `.env` 路由四行,code 唔使掂 |
 
@@ -66,12 +66,11 @@ GitHub Actions cron(每日)
 - [x] Phase 0 — 環境準備(GitHub、Claude Code + Max 登入;Anthropic/MiniMax key 留 production 先開)
 - [x] Phase 1.0 — project 地基 + `llm.py` + `test_llm.py` 全綠(兩個腦經 Max plan call 通)
 - [ ] **Phase 1A — routes.yaml(由參考網站抽)+ fast-flights 掃描器** ← 而家做緊(2026-06-13 已做:抽到參考網站全部 57 個目的地入 routes.yaml、scanner.py 寫好、smoke 3 條 route 通過、加咗第二輪補掃;待:user 確認清單 + 人手對 2 條 link,再揀時間跑全量 171 條)
-- [ ] Phase 1B — Reddit scout(`.json`)+ scout 腦篩選 + consolidate
+- [ ] **Phase 1B — RSS scout(Reddit `.json` + 錯價網 RSS)+ Haiku 篩 + consolidate** ← 而家做緊(計劃:docs/superpowers/plans/2026-06-13-phase-1b-rss-scout.md;設計:docs/superpowers/specs/2026-06-13-flight-deal-system-design.md)
 - [ ] Phase 2 — master 核實 agent(triage → fast-flights 重query → deep links)
 - [ ] Phase 2.5 — 接 Supabase(本地 JSON 遷移過去)
 - [ ] Phase 3 — Next.js 網站 + deploy Vercel
 - [ ] Phase 4 — GitHub Actions 每日 cron + Secrets
-- [ ] Phase 4.5 — 驗證週(`--compare`:M3 vs Haiku scout 對照 7 日,先決定 production scout 腦)
 - [ ] Phase 5 — 小紅書 scout(MediaCrawler + cookie 登入)
 - [ ] Phase 6 — Facebook / Instagram scout(Apify 或半人手,最後先做)
 
