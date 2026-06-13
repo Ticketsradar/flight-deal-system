@@ -54,8 +54,8 @@ reddit:
 # 規矩:用原生 RSS;每個 feed 之間隨機 delay。URL 起步用以下,smoke 會實測,
 # 拎唔到嘢(0 篇)嘅 feed 喺度刪走或換 URL。
 error_fare_sites:
-  - name: secretflying           # secretflying.com — 國際 error fare 大台
-    url: https://www.secretflying.com/feed/
+  - name: theflightdeal          # theflightdeal.com — 平機票/錯價,RSS 穩定
+    url: https://www.theflightdeal.com/feed/
     lang: en
     priority: high
   - name: fly4free               # fly4free.com — 國際平機票/錯價

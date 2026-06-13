@@ -4,21 +4,12 @@ test_feeds.py — Phase 1B feeds normalize 測試(離線,唔使網絡)
 """
 import sys
 
-from feeds import normalize_reddit, normalize_rss
-
-SAMPLE_REDDIT = {
-    "data": {"children": [
-        {"data": {"title": "Error fare? HKG-LON RT cheap",
-                  "selftext": "Cathay business mispriced",
-                  "permalink": "/r/flightdeals/comments/abc/hkg_lon/",
-                  "created_utc": 1750000000}},
-    ]}
-}
+from feeds import normalize_rss
 
 SAMPLE_RSS = """<?xml version="1.0"?>
 <rss version="2.0"><channel>
 <item><title>HKG to Zurich HK$1950</title>
-<link>https://secretflying.com/posts/hkg-zrh/</link>
+<link>https://www.theflightdeal.com/posts/hkg-zrh/</link>
 <description>Possible error fare from Hong Kong</description>
 <pubDate>Mon, 01 Jun 2026 10:00:00 GMT</pubDate></item>
 </channel></rss>"""
@@ -27,18 +18,19 @@ SAMPLE_RSS = """<?xml version="1.0"?>
 def main() -> None:
     ok = True
 
-    r = normalize_reddit(SAMPLE_REDDIT, "flightdeals")
-    cond = (len(r) == 1 and r[0]["source_url"].endswith("/hkg_lon/")
-            and r[0]["source_platform"] == "reddit/r/flightdeals"
-            and "HKG-LON" in r[0]["title"])
-    print(("✅" if cond else "❌"), "reddit normalize:", r[0] if r else None)
+    # error-fare 網站 RSS:platform 標籤照用
+    s = normalize_rss(SAMPLE_RSS, "rss/theflightdeal")
+    cond = (len(s) == 1 and s[0]["source_platform"] == "rss/theflightdeal"
+            and "Zurich" in s[0]["title"]
+            and s[0]["source_url"] == "https://www.theflightdeal.com/posts/hkg-zrh/")
+    print(("✅" if cond else "❌"), "rss normalize:", s[0] if s else None)
     ok = ok and cond
 
-    s = normalize_rss(SAMPLE_RSS, "secretflying")
-    cond = (len(s) == 1 and s[0]["source_platform"] == "rss/secretflying"
-            and "Zurich" in s[0]["title"]
-            and s[0]["source_url"] == "https://secretflying.com/posts/hkg-zrh/")
-    print(("✅" if cond else "❌"), "rss normalize:", s[0] if s else None)
+    # reddit(走 .rss):同一 parser,platform 標籤係 reddit/r/<sub>
+    r = normalize_rss(SAMPLE_RSS, "reddit/r/flightdeals")
+    cond = (len(r) == 1 and r[0]["source_platform"] == "reddit/r/flightdeals"
+            and r[0]["title"] == "HKG to Zurich HK$1950")
+    print(("✅" if cond else "❌"), "reddit-rss normalize:", r[0]["source_platform"] if r else None)
     ok = ok and cond
 
     print()
