@@ -114,6 +114,7 @@ def cheap_flight_rows(scan_doc: dict) -> list[dict]:
                 "month": mo.get("month"),
                 "gflights_url": mo.get("google_flights"),
                 "tripcom_url": tripcom,
+                "periods": mo.get("periods"),  # top-3 平價時段(jsonb)
             })
     return rows
 

@@ -448,7 +448,7 @@ def main() -> int:
 
     def scan_month(origin: str, dest: str, stay: int, y: int, m: int) -> dict:
         mlabel = f"{y}-{m:02d}"
-        best = None
+        oks: list = []
         tried = failed = beyond = 0
         last_err = ""
         for day in sample_days:
@@ -467,8 +467,7 @@ def main() -> int:
                 guard["consec"] = 0
                 if r.get("via") == "browser":
                     scan["stats"]["tier2_saved"] += 1
-                if best is None or r["price"] < best["price"]:
-                    best = {**r, "depart": depart.isoformat(), "return": ret.isoformat()}
+                oks.append({**r, "depart": depart.isoformat(), "return": ret.isoformat()})
             elif r["status"] == "no_flights":
                 scan["stats"]["no_flights"] += 1
                 guard["consec"] = 0
@@ -483,7 +482,21 @@ def main() -> int:
                 guard["consec"] += 1
             time.sleep(random.uniform(float(delay_lo), float(delay_hi)))
             cool_down()
-        if best:
+        if oks:
+            oks.sort(key=lambda o: o["price"])
+            top: list = []
+            seen_dep: set = set()
+            for o in oks:  # 揀 top-3 唔同出發日(避免同一日重複)
+                if o["depart"] in seen_dep:
+                    continue
+                seen_dep.add(o["depart"])
+                top.append(o)
+                if len(top) >= 3:
+                    break
+            best = top[0]
+            periods = [{"depart": o["depart"], "return": o["return"], "price": o["price"],
+                        "airline": o["airline"], "google_flights": deep_link(o["tfs"], currency)}
+                       for o in top]
             via = "🌐" if best.get("via") == "browser" else ""
             return {
                 "month": mlabel, "status": "ok",
@@ -492,6 +505,7 @@ def main() -> int:
                 "airline": best["airline"], "stops": best["stops"],
                 "duration": best["duration"], "price_trend": best["price_trend"],
                 "google_flights": deep_link(best["tfs"], currency),
+                "periods": periods,
                 "samples_tried": tried, "samples_failed": failed,
                 "via": best.get("via", "http"), "_via_mark": via,
             }

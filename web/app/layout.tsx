@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "平機票 ✈️ 雷達 — 香港出發",
+  title: "窮鬼機票 ✈️ — 香港出發",
   description: "香港 / 深圳 / 廣州 出發,自動掃描平價機票 + 偵測錯價(error fare)。",
 };
 

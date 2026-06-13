@@ -24,6 +24,7 @@ create table if not exists cheap_flights (
     month         text,                          -- 'YYYY-MM'
     gflights_url  text,
     tripcom_url   text,
+    periods       jsonb,                         -- top-3 平價時段 [{depart,return,price,airline,google_flights}]
     scanned_at    timestamptz default now(),
     constraint cheap_flights_route_month unique (origin, destination, month)
 );

@@ -2,6 +2,14 @@
 
 export type FareStatus = "live" | "unverified" | "dead";
 
+export interface Period {
+  depart: string | null;
+  return: string | null;
+  price: number | null;
+  airline?: string | null;
+  google_flights?: string | null;
+}
+
 export interface CheapFlight {
   id: number;
   origin: string;
@@ -16,6 +24,7 @@ export interface CheapFlight {
   month: string | null; // 'YYYY-MM'
   gflights_url: string | null;
   tripcom_url: string | null;
+  periods: Period[] | null;
   scanned_at: string | null;
 }
 

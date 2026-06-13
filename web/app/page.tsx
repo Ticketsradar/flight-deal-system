@@ -101,7 +101,7 @@ export default async function Page({
               冇符合條件嘅目的地,試下放寬篩選或者轉出發地。
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 items-start">
               {groups.map((g) => (
                 <DestinationCard
                   key={g.dest}

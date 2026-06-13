@@ -1,5 +1,5 @@
 import { airportInfo } from "@/lib/airports";
-import type { CheapFlight } from "@/lib/types";
+import type { CheapFlight, Period } from "@/lib/types";
 
 function monthLabel(m: string | null): string {
   if (!m) return "";
@@ -56,24 +56,43 @@ export default function DestinationCard({
 
       <div className="px-4 pb-4 pt-1 grid grid-cols-3 sm:grid-cols-4 gap-2">
         {months.map((f) => {
-          const p = f.price_hkd ?? 0;
-          const isMin = p === min && p > 0;
-          const col = priceColor(p, min, max);
+          const col = priceColor(f.price_hkd ?? 0, min, max);
+          const periods: Period[] =
+            f.periods && f.periods.length
+              ? f.periods
+              : [
+                  {
+                    depart: f.depart_date,
+                    return: f.return_date,
+                    price: f.price_hkd,
+                    airline: f.airline,
+                    google_flights: f.gflights_url,
+                  },
+                ];
+          const pmin = Math.min(...periods.map((x) => x.price ?? Infinity));
           return (
-            <a
+            <div
               key={f.id}
-              href={f.gflights_url ?? "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={`${f.depart_date} → ${f.return_date}${f.airline ? " · " + f.airline : ""}`}
-              className={`rounded-lg px-2 py-1.5 text-center ${isMin ? "ring-2 ring-emerald-300/80" : ""}`}
-              style={{ background: "rgba(255,255,255,0.08)", borderTop: `3px solid ${col}` }}
+              className="rounded-lg px-2 py-1.5"
+              style={{ background: "rgba(255,255,255,0.07)", borderTop: `3px solid ${col}` }}
             >
-              <div className="text-[11px] opacity-70">{monthLabel(f.month)}</div>
-              <div className="text-sm font-bold" style={{ color: col }}>
-                {f.price_hkd ?? "—"}
+              <div className="text-[11px] opacity-70 text-center mb-1">{monthLabel(f.month)}</div>
+              <div className="flex flex-col gap-0.5">
+                {periods.map((pp, i) => (
+                  <a
+                    key={i}
+                    href={pp.google_flights ?? "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`${pp.depart} → ${pp.return}${pp.airline ? " · " + pp.airline : ""}`}
+                    className="block text-center text-sm font-bold leading-tight rounded hover:bg-white/10"
+                    style={{ color: pp.price === pmin ? "#34d399" : "#94a3b8" }}
+                  >
+                    {pp.price ?? "—"}
+                  </a>
+                ))}
               </div>
-            </a>
+            </div>
           );
         })}
       </div>
