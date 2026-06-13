@@ -232,7 +232,7 @@ def _result_to_dict(result, tfs: str, via: str) -> dict:
 
 
 def query_roundtrip(origin: str, dest: str, depart: dt.date, ret: dt.date,
-                    currency: str, browser) -> dict:
+                    currency: str, browser, seat: str = "economy") -> dict:
     """查一對來回日期:先 HTTP(最多 3 次,純空殼 2 次就算),唔得就真瀏覽器。"""
     flt = TFSData.from_interface(
         flight_data=[
@@ -241,7 +241,7 @@ def query_roundtrip(origin: str, dest: str, depart: dt.date, ret: dt.date,
         ],
         trip="round-trip",
         passengers=Passengers(adults=1),
-        seat="economy",
+        seat=seat,
     )
     tfs = flt.as_b64().decode()
     last_err = ""
