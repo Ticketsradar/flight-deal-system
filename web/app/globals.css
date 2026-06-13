@@ -53,3 +53,39 @@ body {
 .link-pill:hover {
   background: rgba(255, 255, 255, 0.24);
 }
+
+/* 篩選器 */
+.filter-input {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #f8fafc;
+  outline: none;
+}
+.filter-input:focus {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+/* native dropdown 選項喺白底 render,要深色字 */
+.filter-input option {
+  color: #0f172a;
+}
+.filter-btn {
+  background: rgba(16, 185, 129, 0.9);
+  color: #fff;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+.filter-btn:hover {
+  background: rgb(16, 185, 129);
+}
+.filter-reset {
+  padding: 7px 12px;
+  opacity: 0.7;
+  align-self: center;
+}
+.filter-reset:hover {
+  opacity: 1;
+}
