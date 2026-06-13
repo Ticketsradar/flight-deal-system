@@ -52,7 +52,7 @@ def fetch_url(url: str, headers: dict | None = None) -> str | None:
             resp = httpx.get(url, headers=headers or {}, timeout=HTTP_TIMEOUT,
                              follow_redirects=True)
             if resp.status_code == 429:
-                wait = 10 * attempt
+                wait = 6 * attempt
                 log(f"429 rate limit:{url} — 等 {wait}s")
                 time.sleep(wait)
                 continue
@@ -112,7 +112,7 @@ def fetch_all(sources: dict, limit: int = 25, max_feeds: int = 0) -> list[dict]:
         done += 1
         if max_feeds and done >= max_feeds:
             return posts
-        _polite_sleep()
+        _polite_sleep(5, 9)  # reddit 對 .rss 都會 429 — 隔耐啲先溫純
 
     for site in sources.get("error_fare_sites", []) or []:
         if not site.get("url"):
