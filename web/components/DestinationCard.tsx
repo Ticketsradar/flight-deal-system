@@ -94,9 +94,9 @@ export default function DestinationCard({
 
       <div className="px-4 pb-4 pt-1">
         <div className="text-xs opacity-70 mb-2">
-          每月按價分層:<span style={{ color: TIERS[0].text }}>綠最平</span> ·{" "}
+          每月只列平價日:<span style={{ color: TIERS[0].text }}>綠最平</span> ·{" "}
           <span style={{ color: TIERS[1].text }}>青次平</span> ·{" "}
-          <span style={{ color: TIERS[2].text }}>黃第三</span> · 灰較貴 — 撳跳該日 Google Flights
+          <span style={{ color: TIERS[2].text }}>黃第三平</span> — 撳跳該日 Google Flights
         </div>
         <div className="flex flex-col gap-2">
           {monthGroups.map(([month, ps]) => {
@@ -108,8 +108,10 @@ export default function DestinationCard({
               <div key={month} className="flex items-start gap-2">
                 <div className="text-xs opacity-70 w-9 shrink-0 pt-2">{monthLabel(month)}</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {sorted.map((p, i) => {
-                    const c = TIERS[priceTier(p.price ?? Infinity, mMin)];
+                  {sorted
+                    .filter((p) => priceTier(p.price ?? Infinity, mMin) < 3)
+                    .map((p, i) => {
+                      const c = TIERS[priceTier(p.price ?? Infinity, mMin)];
                     return (
                       <a
                         key={i}
