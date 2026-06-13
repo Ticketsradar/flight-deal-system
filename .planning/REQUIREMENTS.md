@@ -54,26 +54,26 @@
 
 ## Traceability
 
-roadmap 創建時填。
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FLEX-01 | TBD | Pending |
-| FLEX-02 | TBD | Pending |
-| FLEX-03 | TBD | Pending |
-| DAILY-01 | TBD | Pending |
-| DAILY-02 | TBD | Pending |
-| DAILY-03 | TBD | Pending |
-| MISP-01 | TBD | Pending |
-| MISP-02 | TBD | Pending |
-| MISP-03 | TBD | Pending |
-| DATA-01 | TBD | Pending |
+| FLEX-01 | Phase 2 | Pending |
+| FLEX-02 | Phase 2 | Pending |
+| FLEX-03 | Phase 2 | Pending |
+| DAILY-01 | Phase 3 | Pending |
+| DAILY-02 | Phase 3 | Pending |
+| DAILY-03 | Phase 3 | Pending |
+| MISP-01 | Phase 4 | Pending |
+| MISP-02 | Phase 4 | Pending |
+| MISP-03 | Phase 4 | Pending |
+| DATA-01 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 10 total
-- Mapped to phases: 0（待 roadmap）
-- Unmapped: 10 ⚠️
+- Mapped to phases: 10 ✓
+- Unmapped: 0 ✓
+
+> Phase 1（Travelpayouts 覆蓋率 Spike)係決策閘,唔直接 map 任何 v1 requirement — 佢交付一個有證據嘅數據源決定,解鎖 FLEX-*(Phase 2)同 DAILY-*(Phase 3)嘅實作路徑。
 
 ---
 *Requirements defined: 2026-06-14*
-*Last updated: 2026-06-14 after initial definition*
+*Last updated: 2026-06-14 — traceability filled (4-phase spike-gated roadmap, 10/10 mapped)*
