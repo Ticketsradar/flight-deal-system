@@ -16,7 +16,7 @@
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Travelpayouts 覆蓋率 Spike（決策閘）** - 攞免費 token 量度真實覆蓋,出 GO vs FALLBACK 數據源建議(交付一個決定 + 文檔,唔係 UI)
+- [x] **Phase 1: Travelpayouts 覆蓋率 Spike（決策閘）** ✅ 2026-06-14 — 拍板 **FALLBACK**(Travelpayouts 來回數據太疏);詳見 `research/TRAVELPAYOUTS-SPIKE.md`
 - [ ] **Phase 2: 彈性行程日數** - 每個平價日標明行程日數 + 來回價,按價分層,撳跳對應 depart+return 嘅 Google Flights
 - [ ] **Phase 3: 可靠每日更新** - 每日可靠自動更新 + 容錯 partial upload + 網站顯示真實「最後更新」
 - [ ] **Phase 4: 自家錯價偵測** - price_history 表 + 統計異常偵測,候選餵入現有 master,RSS 來源照行
@@ -41,7 +41,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Goal**: 用 Phase 1 拍板嘅路徑,為每 route×月 產出「彈性行程日數」嘅最平 / 次平 / 第三平資料(每個平價日帶自己嘅 trip length),落 Supabase,並更新網站令每張目的地卡嘅平價日子掣顯示行程日數 + 來回價,撳就跳對應 depart+return 嘅 Google Flights。
 **Depends on**: Phase 1（數據源決定)
 **Requirements**: FLEX-01, FLEX-02, FLEX-03
-**Branches on Phase 1**: GO → 由 `month-matrix` records 計 `nights = return − depart`,group by 月選 cheapest/2nd/3rd 落 `periods`。FALLBACK → 喺現有 `--grid` 揾到嘅平價出發日上,加一個薄薄嘅 return-offset 內層(`dur−2…dur+2`,約 5 個)取最平,模仿參考網站 ±2 window(唔做 28×13 brute force)。
+**Branches on Phase 1**: ✅ **已定 = FALLBACK**(spike:Travelpayouts 來回數據太疏)。實作:喺現有 `--grid` 揾到嘅平價出發日上,加一個薄薄嘅 return-offset 內層(`dur−2…dur+2`,約 5 個)取最平,模仿參考網站 ±2 window(唔做 28×13 brute force)。〔可選優化:用 Travelpayouts month-matrix 單程數據做平價出發日 anchor,進一步減 query。〕
 **Success Criteria** (what must be TRUE):
   1. 每張目的地卡展開後,同一個月可以見到 **多種行程日數**(2–14 範圍內,實際似參考網站嘅 dur±2)嘅平價出發日,唔再淨係固定一種日數 — FLEX-01
   2. 每個平價日子掣清楚標明 **行程日數 + 來回價**(似「11號 6日」),並按價分層(最平 / 次平 / 第三平)顯示 — FLEX-02
@@ -54,7 +54,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Goal**: 令平機票數據每日可靠自動更新一次(取代而家 ~3 日一次嘅東拼西湊),更新過程容錯(部分掃描失敗都照出已完成部分),並喺網站誠實顯示真實「最後更新」時間。
 **Depends on**: Phase 1（每日更新策略 branch on 數據源決定)
 **Requirements**: DAILY-01, DAILY-02, DAILY-03
-**Branches on Phase 1**: GO → 一個簡單每日 cron,約 1,200 個 cached API call,單 job 幾分鐘完成,冇 IP 風險。FALLBACK → 每日 incremental(staleness budget,先掃最舊嘅,coarse grid)+ 每週 full sweep,加多 shard / 減頻率,加 `concurrency:` guard 防 cron-delay 撞單。兩條路都要做共通修復(見下)。
+**Branches on Phase 1**: ✅ **已定 = FALLBACK**(自己掃,冇 cached API 捷徑)。實作:每日 incremental(staleness budget,先掃最舊嘅,coarse grid)+ 每週 full sweep,加多 shard / 減頻率,加 `concurrency:` guard 防 cron-delay 撞單。共通修復見下。
 **Success Criteria** (what must be TRUE):
   1. 平機票數據 **每日自動更新一次**,可靠完成,唔再 ~3 日先 refresh 一次 — DAILY-01
   2. `scan.yml` 修好:`upload.py` 行做一個 `if: always()`-style 嘅獨立 step,就算掃描超時 / 失敗,已完成部分照樣 upload 出街(唔會成日 0 更新)— DAILY-03
@@ -118,7 +118,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Travelpayouts 覆蓋率 Spike（決策閘) | 0/TBD | Not started | - |
+| 1. Travelpayouts 覆蓋率 Spike（決策閘) | 1/1 | ✅ Complete (FALLBACK) | 2026-06-14 |
 | 2. 彈性行程日數 | 0/TBD | Not started | - |
 | 3. 可靠每日更新 | 0/TBD | Not started | - |
 | 4. 自家錯價偵測 | 0/TBD | Not started | - |

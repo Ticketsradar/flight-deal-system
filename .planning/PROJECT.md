@@ -62,7 +62,7 @@
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| 彈性行程日數行「先試免費 Travelpayouts API → 唔夠 fallback 自己掃 ±N」 | user 揀;$0、一個 call 攞全月彈性行程兼順手解決每日更新;有覆蓋率風險故 spike-gate | — Pending（Phase 1 spike） |
+| 彈性行程日數行「先試免費 Travelpayouts API → 唔夠 fallback 自己掃 ±N」 | user 揀;$0、一個 call 攞全月彈性行程兼順手解決每日更新;有覆蓋率風險故 spike-gate | ✓ FALLBACK（2026-06-14 spike:Travelpayouts 來回數據太疏)→ 行 fast-flights 平價日 ±2 自掃 |
 | 錯價票主力行「自家數據異常偵測」而非加外部來源 | 外部來源大多畀 Cloudflare 擋 / Twitter 死;自家數據 ROI 最高、reuse 現有 master | — Pending（Phase 4） |
 | Reserve 返 user 原計劃嘅小紅書(Phase 5)/ FB·IG(Phase 6)社交 scout 做 committed scope | user 明確要求保留原始願景嘅 add-on 來源;補返 RSS 覆蓋唔到嘅 HKG-origin 本地 bug-fare 社群;reuse 同一條 scout → master plumbing | — Pending（Phase 5/6） |
 | 唔用付費 API 做完整 grid | 成本;參考網站本身都唔係真 2–14 grid | ✓ Good |

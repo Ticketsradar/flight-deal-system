@@ -1,0 +1,144 @@
+{
+ "HKG-BKK": {
+  "cheap": {
+   "records": 1,
+   "with_return": 0,
+   "nights": [],
+   "usable_2_14": 0,
+   "sample": {
+    "airline": "UO",
+    "departure_at": "2026-08-08T21:30:00+08:00",
+    "return_at": "2026-08-19T10:10:00+07:00",
+    "expires_at": "2026-06-13T20:58:37Z",
+    "price": 1688,
+    "flight_number": 732,
+    "duration": 360,
+    "duration_to": 170,
+    "duration_back": 190
+   }
+  },
+  "week_matrix": {
+   "records": 1,
+   "with_return": 1,
+   "nights": [
+    11
+   ],
+   "usable_2_14": 1,
+   "sample": {
+    "depart_date": "2026-08-08",
+    "origin": "HKG",
+    "destination": "BKK",
+    "gate": "Trip.com",
+    "return_date": "2026-08-19",
+    "found_at": "2026-06-12T04:08:47Z",
+    "trip_class": 0,
+    "value": 1688,
+    "number_of_changes": 0,
+    "duration": 360,
+    "distance": 1690,
+    "show_to_affiliates": true,
+    "actual": true
+   }
+  }
+ },
+ "HKG-NRT": {
+  "cheap": {
+   "records": 0,
+   "with_return": 0,
+   "nights": [],
+   "usable_2_14": 0,
+   "sample": null
+  },
+  "week_matrix": {
+   "records": 0,
+   "with_return": 0,
+   "nights": [],
+   "usable_2_14": 0,
+   "sample": null
+  }
+ },
+ "HKG-KUL": {
+  "cheap": {
+   "records": 1,
+   "with_return": 0,
+   "nights": [],
+   "usable_2_14": 0,
+   "sample": {
+    "airline": "AK",
+    "departure_at": "2026-08-03T18:30:00+08:00",
+    "return_at": "2026-08-08T07:15:00+08:00",
+    "expires_at": "2026-06-13T20:58:44Z",
+    "price": 1935,
+    "flight_number": 137,
+    "duration": 480,
+    "duration_to": 240,
+    "duration_back": 240
+   }
+  },
+  "week_matrix": {
+   "records": 1,
+   "with_return": 1,
+   "nights": [
+    5
+   ],
+   "usable_2_14": 1,
+   "sample": {
+    "depart_date": "2026-08-10",
+    "origin": "HKG",
+    "destination": "KUL",
+    "gate": "Vayama",
+    "return_date": "2026-08-15",
+    "found_at": "2026-06-07T07:53:15Z",
+    "trip_class": 0,
+    "value": 2177,
+    "number_of_changes": 0,
+    "duration": 480,
+    "distance": 2516,
+    "show_to_affiliates": true,
+    "actual": true
+   }
+  }
+ },
+ "SZX-BKK": {
+  "cheap": {
+   "records": 1,
+   "with_return": 0,
+   "nights": [],
+   "usable_2_14": 0,
+   "sample": {
+    "airline": "FD",
+    "departure_at": "2026-08-08T23:30:00+08:00",
+    "return_at": "2026-08-19T18:30:00+07:00",
+    "expires_at": "2026-06-13T20:58:48Z",
+    "price": 1989,
+    "flight_number": 597,
+    "duration": 340,
+    "duration_to": 165,
+    "duration_back": 175
+   }
+  },
+  "week_matrix": {
+   "records": 1,
+   "with_return": 1,
+   "nights": [
+    11
+   ],
+   "usable_2_14": 1,
+   "sample": {
+    "depart_date": "2026-08-08",
+    "origin": "SZX",
+    "destination": "BKK",
+    "gate": "Trip.com",
+    "return_date": "2026-08-19",
+    "found_at": "2026-06-12T02:44:22Z",
+    "trip_class": 0,
+    "value": 1989,
+    "number_of_changes": 0,
+    "duration": 340,
+    "distance": 1696,
+    "show_to_affiliates": true,
+    "actual": true
+   }
+  }
+ }
+}

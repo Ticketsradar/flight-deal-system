@@ -3,10 +3,10 @@ gsd_state_version: '1.0'  # placeholder; syncStateFrontmatter overwrites on firs
 status: planning
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 0
   completed_plans: 0
-  percent: 0
+  percent: 16
 ---
 
 # Project State
@@ -16,16 +16,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-14)
 
 **Core value:** 畀香港用戶一個可信、每日更新嘅地方,快速搵到值得買嘅平機票同真·錯價票,並一撳對返 Google Flights 實時價。
-**Current focus:** Phase 1 — Travelpayouts 覆蓋率 Spike（決策閘)
+**Current focus:** Phase 2 — 彈性行程日數(FALLBACK:fast-flights 平價日 ±2 自掃)
 
 ## Current Position
 
-Phase: 1 of 6 (Travelpayouts 覆蓋率 Spike — 決策閘)
+Phase: 2 of 6 (彈性行程日數)— Phase 1 spike ✅ 完成
 Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-06-14 — Roadmap 修訂:社交來源 scout 由 v2 升做 v1(小紅書 Phase 5 + FB/IG Phase 6),4 → 6 phases,12/12 v1 requirements mapped
+Status: Ready to plan Phase 2
+Last activity: 2026-06-14 — Phase 1 spike 完成:Travelpayouts 來回數據太疏 → 拍板 FALLBACK(fast-flights 平價日 ±2 自掃)。詳見 research/TRAVELPAYOUTS-SPIKE.md
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 16% (1/6 phases)
 
 ## Performance Metrics
 
@@ -53,7 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Milestone]: 彈性行程日數行「先試免費 Travelpayouts API → 唔夠 fallback 自己掃 ±N」(spike-gated,Phase 1 拍板)
+- [Phase 1 ✅]: 彈性行程日數 → **FALLBACK 拍板**:Travelpayouts 來回 cache 太疏(month-matrix 單程;latest/cheap/week-matrix 每 call 0–1 筆)→ 行 fast-flights 平價日 ±2 自掃。token 留 `.env` 備用(可選 anchor 優化)
 - [Milestone]: 錯價票主力行「自家數據異常偵測」而非加外部來源(Phase 4)
 - [Milestone]: Reserve 返 user 原計劃嘅小紅書(Phase 5)/ FB·IG(Phase 6)社交 scout 做 committed scope,reuse 同一條 scout → master plumbing
 - [Research]: CLAUDE.md 舊「硬牆(43 萬 query)」假設係錯 — 參考網站只係 dur±2 window,fast-flights 加薄 ±N 內層幾千 query 就得
@@ -68,7 +68,7 @@ None yet.
 
 [Issues that affect future work]
 
-- [Phase 1]: Travelpayouts 冷門 SZX/CAN 線覆蓋率係 make-or-break 未知數 — 要 live token spike 先拍板(決定 Phase 2/3 路徑)
+- [Phase 1 ✅ resolved]: spike 證實 Travelpayouts 來回數據太疏 → FALLBACK;Phase 2/3 行 fast-flights 自掃路徑(month-matrix 單程數據可留作可選 anchor 優化)
 - [Known bug]: `db.cheap_flight_rows()` 冇寫 `scanned_at` → UPDATE 唔更新時間戳(Phase 3 修)
 - [Known bug]: `scan.yml` 一步兩 command,掃描超時被 kill 就連 `upload.py` 都唔跑 = 部分更新出唔到街(Phase 3 修)
 - [Phase 4]: 異常偵測有 cold-start caveat,需約 1 星期歷史先準;由 dated `scan_*.json` backfill bootstrap
@@ -90,5 +90,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-06-14
-Stopped at: ROADMAP / REQUIREMENTS / PROJECT / STATE 修訂 — 社交 scout 升做 v1,6 phases,12/12 v1 requirements mapped
+Stopped at: Phase 1 spike 完成 → FALLBACK 拍板。下一步 /gsd-plan-phase 2(fast-flights 平價日 ±2 自掃,網站顯示行程日數)
 Resume file: None

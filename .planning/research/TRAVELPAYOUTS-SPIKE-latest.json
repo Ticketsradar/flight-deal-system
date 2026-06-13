@@ -1,0 +1,862 @@
+{
+ "generated_at": "2026-06-14T03:57:01",
+ "endpoint": "v2/prices/latest one_way=false",
+ "routes": [
+  [
+   "HKG",
+   "BKK"
+  ],
+  [
+   "HKG",
+   "NRT"
+  ],
+  [
+   "HKG",
+   "TPE"
+  ],
+  [
+   "HKG",
+   "SIN"
+  ],
+  [
+   "HKG",
+   "KIX"
+  ],
+  [
+   "HKG",
+   "ICN"
+  ],
+  [
+   "HKG",
+   "KUL"
+  ],
+  [
+   "HKG",
+   "NGO"
+  ],
+  [
+   "HKG",
+   "LHR"
+  ],
+  [
+   "HKG",
+   "SYD"
+  ],
+  [
+   "SZX",
+   "BKK"
+  ],
+  [
+   "CAN",
+   "ICN"
+  ]
+ ],
+ "months": [
+  "2026-07-01",
+  "2026-08-01",
+  "2026-09-01",
+  "2026-10-01",
+  "2026-11-01",
+  "2026-12-01",
+  "2027-01-01"
+ ],
+ "sample_record": {
+  "depart_date": "2026-08-02",
+  "origin": "HKG",
+  "destination": "SEL",
+  "gate": "Trip.com",
+  "return_date": "2026-08-02",
+  "found_at": "2026-06-10T23:57:07",
+  "trip_class": 0,
+  "value": 1922,
+  "number_of_changes": 0,
+  "duration": 465,
+  "distance": 2066,
+  "show_to_affiliates": true,
+  "actual": true
+ },
+ "http_errors": {},
+ "grid": {
+  "HKG-BKK": {
+   "2026-07": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-08": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  },
+  "HKG-NRT": {
+   "2026-07": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-08": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  },
+  "HKG-TPE": {
+   "2026-07": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-08": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  },
+  "HKG-SIN": {
+   "2026-07": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-08": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  },
+  "HKG-KIX": {
+   "2026-07": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-08": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  },
+  "HKG-ICN": {
+   "2026-07": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-08": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": 1922,
+    "age_med": 3
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  },
+  "HKG-KUL": {
+   "2026-07": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-08": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  },
+  "HKG-NGO": {
+   "2026-07": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-08": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  },
+  "HKG-LHR": {
+   "2026-07": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-08": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  },
+  "HKG-SYD": {
+   "2026-07": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-08": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  },
+  "SZX-BKK": {
+   "2026-07": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-08": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  },
+  "CAN-ICN": {
+   "2026-07": {
+    "n": 2,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": 2536,
+    "age_med": 3.5
+   },
+   "2026-08": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": 2667,
+    "age_med": 6
+   },
+   "2026-09": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": 2322,
+    "age_med": 2
+   },
+   "2026-10": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": 3624,
+    "age_med": 5
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "off_month": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null
+   }
+  }
+ },
+ "verdict_auto": "FALLBACK(覆蓋太疏 → 自己掃 ±2 日)"
+}
