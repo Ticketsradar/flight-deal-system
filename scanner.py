@@ -486,13 +486,11 @@ def main() -> int:
             oks.sort(key=lambda o: o["price"])
             top: list = []
             seen_dep: set = set()
-            for o in oks:  # 揀 top-3 唔同出發日(避免同一日重複)
+            for o in oks:  # 收晒唔同出發日嘅樣本(畀網站顯示平價日子,price 升序)
                 if o["depart"] in seen_dep:
                     continue
                 seen_dep.add(o["depart"])
                 top.append(o)
-                if len(top) >= 3:
-                    break
             best = top[0]
             periods = [{"depart": o["depart"], "return": o["return"], "price": o["price"],
                         "airline": o["airline"], "google_flights": deep_link(o["tfs"], currency)}
