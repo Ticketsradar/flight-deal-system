@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  color: #f8fafc;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  /* fallback 漸變(BackgroundSlideshow 會喺上面 cross-fade 風景場景)*/
+  background:
+    radial-gradient(1200px 800px at 15% 8%, #1e3a8a 0%, transparent 55%),
+    radial-gradient(1000px 700px at 85% 18%, #0e7490 0%, transparent 50%),
+    linear-gradient(160deg, #0b1220 0%, #0f172a 45%, #111827 100%);
+  background-attachment: fixed;
+  min-height: 100%;
+}
+
+/* 磨砂玻璃卡 */
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px) saturate(125%);
+  -webkit-backdrop-filter: blur(14px) saturate(125%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(125%);
+  -webkit-backdrop-filter: blur(12px) saturate(125%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.glass-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* 連結藥丸 */
+.link-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+.link-pill:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
