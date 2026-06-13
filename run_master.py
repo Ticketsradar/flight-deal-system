@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 
 import master
+import notifier
 import scanner
 
 ROOT = Path(__file__).parent
@@ -33,6 +34,7 @@ def main() -> int:
     ap.add_argument("--file", default="", help="指定 candidates JSON(預設攞最新)")
     ap.add_argument("--limit", type=int, default=0, help="最多核幾多個(0=全部)")
     ap.add_argument("--no-browser", action="store_true", help="停用真瀏覽器後備")
+    ap.add_argument("--no-notify", action="store_true", help="唔好 Telegram 推送(淨係寫檔)")
     args = ap.parse_args()
 
     path = args.file or _latest_candidates()
@@ -82,6 +84,11 @@ def main() -> int:
     tmp.replace(out_path)
     log(f"[master] 寫好 → {out_path}  "
         f"(live {len(buckets['live'])} / unverified {len(buckets['unverified'])} / dead {len(buckets['dead'])})")
+
+    if args.no_notify:
+        log("[master] --no-notify:跳過 Telegram 推送")
+    else:
+        notifier.notify_verified(buckets)
     return 0
 
 
