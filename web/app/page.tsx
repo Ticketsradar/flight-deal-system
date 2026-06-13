@@ -2,12 +2,11 @@ import { getErrorFares, getCheapFlights, getMeta } from "@/lib/data";
 import BackgroundSlideshow from "@/components/BackgroundSlideshow";
 import Header from "@/components/Header";
 import Filters from "@/components/Filters";
-import Heatmap from "@/components/Heatmap";
 import ErrorFareCard from "@/components/ErrorFareCard";
-import CheapFlightCard from "@/components/CheapFlightCard";
+import DestinationCard from "@/components/DestinationCard";
 import TelegramCTA from "@/components/TelegramCTA";
 import Disclaimer from "@/components/Disclaimer";
-import type { Filters as F } from "@/lib/types";
+import type { CheapFlight, Filters as F } from "@/lib/types";
 
 // 每次 request 即時讀 Supabase(資料每日更新,要新鮮)
 export const dynamic = "force-dynamic";
@@ -23,26 +22,39 @@ export default async function Page({
   const one = (v: string | string[] | undefined) =>
     (Array.isArray(v) ? v[0] : v) || undefined;
   const current: F = {
-    origin: one(sp.origin),
+    origin: one(sp.origin) || "HKG", // 預設香港(避開 Supabase 1000 行上限)
     region: one(sp.region),
-    month: one(sp.month),
     maxPrice: one(sp.maxPrice) ? Number(one(sp.maxPrice)) : undefined,
   };
 
-  // 熱力圖用 origin/region/budget(唔含 month),畀用戶喺 12 個月之間揀
-  const baseFilters: F = {
-    origin: current.origin,
-    region: current.region,
-    maxPrice: current.maxPrice,
-  };
-  const [fares, flights, meta] = await Promise.all([
+  const [fares, originFlights, meta] = await Promise.all([
     getErrorFares(),
-    getCheapFlights(baseFilters),
+    getCheapFlights({ origin: current.origin }), // 淨係攞呢個出發地(<1000 行)
     getMeta(),
   ]);
-  const listed = (
-    current.month ? flights.filter((f) => f.month === current.month) : flights
-  ).slice(0, 60);
+
+  // 由資料抽地區選項
+  const regions = [...new Set(originFlights.map((f) => f.region).filter(Boolean) as string[])].sort();
+
+  // 套地區 + 預算篩選
+  let shown = originFlights;
+  if (current.region) shown = shown.filter((f) => f.region === current.region);
+  if (current.maxPrice) shown = shown.filter((f) => (f.price_hkd ?? Infinity) <= current.maxPrice!);
+
+  // 按目的地分組 → 照最平價排
+  const byDest = new Map<string, CheapFlight[]>();
+  for (const f of shown) {
+    const arr = byDest.get(f.destination) ?? [];
+    arr.push(f);
+    byDest.set(f.destination, arr);
+  }
+  const groups = [...byDest.entries()]
+    .map(([dest, fs]) => ({
+      dest,
+      fs,
+      min: Math.min(...fs.map((f) => f.price_hkd ?? Infinity)),
+    }))
+    .sort((a, b) => a.min - b.min);
 
   return (
     <>
@@ -72,34 +84,31 @@ export default async function Page({
           )}
         </section>
 
-        {/* 平機票 */}
+        {/* 平機票:每個目的地一張卡,撳開睇晒月份 */}
         <section className="mt-9">
-          <h2 className="text-2xl font-bold mb-3">
+          <h2 className="text-2xl font-bold mb-1">
             💸 平機票{" "}
-            <span className="text-sm font-normal opacity-60">
-              (顯示 {listed.length} / 符合 {flights.length})
-            </span>
+            <span className="text-sm font-normal opacity-60">({groups.length} 個目的地)</span>
           </h2>
+          <p className="text-xs opacity-60 mb-3">撳目的地展開 → 睇晒每個月最平價,撳邊個月跳去嗰月 Google Flights</p>
 
           <div className="mb-4">
-            <Filters current={current} />
+            <Filters current={current} regions={regions} />
           </div>
 
-          {flights.length > 0 && (
-            <div className="mb-5">
-              <div className="text-sm opacity-70 mb-2">📅 各月最平(撳格睇該月)</div>
-              <Heatmap flights={flights} current={current} />
-            </div>
-          )}
-
-          {listed.length === 0 ? (
+          {groups.length === 0 ? (
             <div className="glass rounded-xl p-4 opacity-80 text-sm">
-              冇符合條件嘅航班,試下放寬篩選。
+              冇符合條件嘅目的地,試下放寬篩選或者轉出發地。
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {listed.map((f) => (
-                <CheapFlightCard key={f.id} f={f} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              {groups.map((g) => (
+                <DestinationCard
+                  key={g.dest}
+                  origin={current.origin!}
+                  destination={g.dest}
+                  flights={g.fs}
+                />
               ))}
             </div>
           )}

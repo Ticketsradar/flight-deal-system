@@ -89,3 +89,11 @@ body {
 .filter-reset:hover {
   opacity: 1;
 }
+
+/* 目的地卡展開箭嘴 */
+.dc-caret {
+  transition: transform 0.2s ease;
+}
+details[open] .dc-caret {
+  transform: rotate(180deg);
+}
