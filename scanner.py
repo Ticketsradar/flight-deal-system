@@ -347,6 +347,8 @@ def main() -> int:
     ap.add_argument("--max-routes", type=int, default=0, help="只掃頭 N 條 route(0=全部)")
     ap.add_argument("--months", type=int, default=7, help="掃未來幾多個月(預設 7;遠月未放飛冇參考價值)")
     ap.add_argument("--samples", type=int, default=0, help="每月抽樣日數 1–4(預設用 routes.yaml)")
+    ap.add_argument("--grid", action="store_true", help="全日曆:每月掃晒每一日(最似參考網站,query 大增)")
+    ap.add_argument("--only", default="", help="只掃指定 route,如 HKG-MNL(demo / Phase 4 分片用)")
     ap.add_argument("--resume", action="store_true", help="沿用今日已掃結果,只補失敗月份+未掃 route")
     ap.add_argument("--no-browser", action="store_true", help="停用真瀏覽器後備(淨 HTTP)")
     args = ap.parse_args()
@@ -364,9 +366,14 @@ def main() -> int:
         samples = 1
     if args.max_routes > 0:
         routes = routes[: args.max_routes]
+    if args.only:
+        want = args.only.strip().upper()
+        routes = [r for r in routes if f"{r['origin']}-{r['dest']}" == want]
 
     today = dt.date.today()
     sample_days = SAMPLE_DAYS[samples]
+    if args.grid:
+        sample_days = list(range(1, 32))  # 每月每一日(scan_month 會 clamp + skip 太近嘅日)
     months = upcoming_months(args.months, sample_days, today)
 
     out_dir = ROOT / "data"
@@ -387,9 +394,9 @@ def main() -> int:
         except Exception as e:
             log(f"[scan] resume 讀檔失敗({type(e).__name__})— 由頭掃過")
 
-    total_q = len(routes) * len(months) * samples
+    total_q = len(routes) * len(months) * len(sample_days)
     est_min = total_q * (((delay_lo + delay_hi) / 2) + 3) / 60
-    log(f"[scan] {len(routes)} 條 route × {len(months)} 個月 × 每月 {samples} 樣本"
+    log(f"[scan] {len(routes)} 條 route × {len(months)} 個月 × 每月 {len(sample_days)} 個取樣日"
         f" ≈ {total_q} queries,淨 HTTP 預計 ~{est_min:.0f} 分鐘(瀏覽器後備另計)")
 
     browser = None if args.no_browser else BrowserFetcher()

@@ -9,12 +9,23 @@ function dayLabel(d: string | null): string {
 }
 function stayDays(p: Period): number | null {
   if (!p.depart || !p.return) return null;
-  const a = new Date(p.depart).getTime();
-  const b = new Date(p.return).getTime();
-  return Math.round((b - a) / 86400000);
+  return Math.round((new Date(p.return).getTime() - new Date(p.depart).getTime()) / 86400000);
 }
 
-// 參考網站風格:一個目的地一張卡,展開見「平價日子」date 掣(按月分組,綠=平)。
+// 同一個月內,按價分層上色:最平(綠)/ 次平(青)/ 第三(黃)/ 較貴(灰)
+const TIERS = [
+  { text: "#34d399", bg: "rgba(16,185,129,0.16)", bd: "rgba(16,185,129,0.55)" },
+  { text: "#5eead4", bg: "rgba(20,184,166,0.12)", bd: "rgba(20,184,166,0.42)" },
+  { text: "#fcd34d", bg: "rgba(245,158,11,0.12)", bd: "rgba(245,158,11,0.4)" },
+  { text: "#94a3b8", bg: "rgba(255,255,255,0.05)", bd: "rgba(255,255,255,0.12)" },
+];
+function priceTier(price: number, monthMin: number): number {
+  if (price <= monthMin * 1.04) return 0;
+  if (price <= monthMin * 1.12) return 1;
+  if (price <= monthMin * 1.22) return 2;
+  return 3;
+}
+
 export default function DestinationCard({
   origin,
   destination,
@@ -28,7 +39,6 @@ export default function DestinationCard({
   const oInfo = airportInfo(origin);
   const cur = flights[0]?.currency ?? "HKD";
 
-  // 每個月嘅 periods 攤平做 (month, period);冇 periods 就用單一最平做 fallback
   const all: { month: string; p: Period }[] = [];
   for (const f of flights) {
     const ps =
@@ -48,8 +58,7 @@ export default function DestinationCard({
 
   const prices = all.map((x) => x.p.price ?? Infinity).filter((p) => p < Infinity);
   const min = prices.length ? Math.min(...prices) : 0;
-  const threshold = min * 1.08; // 8% 內當「平價日」
-  const cheapCount = all.filter((x) => (x.p.price ?? Infinity) <= threshold).length;
+  const cheapCount = all.filter((x) => (x.p.price ?? Infinity) <= min * 1.04).length;
   const stay = all.length ? stayDays(all[0].p) : null;
 
   const byMonth = new Map<string, Period[]>();
@@ -77,7 +86,7 @@ export default function DestinationCard({
             <span className="text-[11px] font-normal opacity-60"> 來回</span>
           </div>
           <div className="text-[11px] opacity-60">
-            {cheapCount} 個平價日{stay ? ` · ${stay}日` : ""}
+            {cheapCount} 個最平日{stay ? ` · ${stay}日` : ""}
           </div>
         </div>
         <span className="dc-caret text-sm opacity-60">▾</span>
@@ -85,18 +94,22 @@ export default function DestinationCard({
 
       <div className="px-4 pb-4 pt-1">
         <div className="text-xs opacity-70 mb-2">
-          綠色 = 平價日子(~{cur} {min} 來回),撳跳該日 Google Flights
+          每月按價分層:<span style={{ color: TIERS[0].text }}>綠最平</span> ·{" "}
+          <span style={{ color: TIERS[1].text }}>青次平</span> ·{" "}
+          <span style={{ color: TIERS[2].text }}>黃第三</span> · 灰較貴 — 撳跳該日 Google Flights
         </div>
         <div className="flex flex-col gap-2">
-          {monthGroups.map(([month, ps]) => (
-            <div key={month} className="flex items-start gap-2">
-              <div className="text-xs opacity-70 w-9 shrink-0 pt-2">{monthLabel(month)}</div>
-              <div className="flex flex-wrap gap-1.5">
-                {ps
-                  .slice()
-                  .sort((a, b) => (a.depart ?? "").localeCompare(b.depart ?? ""))
-                  .map((p, i) => {
-                    const cheap = (p.price ?? Infinity) <= threshold;
+          {monthGroups.map(([month, ps]) => {
+            const sorted = ps
+              .slice()
+              .sort((a, b) => (a.depart ?? "").localeCompare(b.depart ?? ""));
+            const mMin = Math.min(...sorted.map((p) => p.price ?? Infinity));
+            return (
+              <div key={month} className="flex items-start gap-2">
+                <div className="text-xs opacity-70 w-9 shrink-0 pt-2">{monthLabel(month)}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {sorted.map((p, i) => {
+                    const c = TIERS[priceTier(p.price ?? Infinity, mMin)];
                     return (
                       <a
                         key={i}
@@ -105,30 +118,25 @@ export default function DestinationCard({
                         rel="noopener noreferrer"
                         title={`${p.depart} → ${p.return} · ${cur} ${p.price}`}
                         className="px-2 py-1 rounded-lg text-center leading-tight"
-                        style={{
-                          background: cheap ? "rgba(16,185,129,0.14)" : "rgba(255,255,255,0.06)",
-                          border: `1px solid ${cheap ? "rgba(16,185,129,0.55)" : "rgba(255,255,255,0.14)"}`,
-                        }}
+                        style={{ background: c.bg, border: `1px solid ${c.bd}` }}
                       >
-                        <div
-                          className="text-sm font-semibold"
-                          style={{ color: cheap ? "#34d399" : "#cbd5e1" }}
-                        >
+                        <div className="text-sm font-semibold" style={{ color: c.text }}>
                           {dayLabel(p.depart)}
                           <span className="text-[10px] font-normal opacity-70">
                             {" "}
                             {stayDays(p) ?? "?"}日
                           </span>
                         </div>
-                        <div className="text-[10px]" style={{ color: cheap ? "#6ee7b7" : "#94a3b8" }}>
+                        <div className="text-[10px]" style={{ color: c.text, opacity: 0.85 }}>
                           ${p.price ?? "—"}
                         </div>
                       </a>
                     );
                   })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </details>
