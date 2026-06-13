@@ -93,7 +93,14 @@ GitHub Actions cron(每日)
 - Stream A 全日曆掃描:12-job matrix,每 job `scanner.py --slice K/12 --grid --no-browser` + `upload.py`,各 GitHub runner 各自 IP。每日 cron + 手動 dispatch。**未啟動**(要 push + Secrets)。
 - ⚠️ 未知數:GitHub IP 係共用 pool,Google 可能封。要試;被封就減頻率/加 rotation/減 job。
 
-### ⛔ 未決定 — 「2-14 日 trip length 完整 grid」(user 想要,但做唔到)
+### ✅ 已破解(2026-06-14)— 「2-14 日 trip length」唔再係硬牆
+> **更正:下面舊判斷係基於錯誤假設。** 2026-06-14 research 拆解咗參考網站 `flight-deals-web.vercel.app`:佢**根本唔係**做完整 28×13 grid,而係**每個平價出發日只試 ±2 日 return 揀最平**(實際得 4–11 日,唔係真 2–14),數據一樣由 Google Flights 掃。所以**唔使 436k query** — 只需喺現有 `--grid` 揾到嘅平價日加薄薄一層 ±2 return-offset(幾千 query)就抄到。
+>
+> 已開一個 **GSD 改進 milestone**,plan 喺 `.planning/`(`PROJECT.md` / `ROADMAP.md` / `research/` 4 份)。GSD milestone 6 個 phase(同上面舊 phase 編號分開睇):**P1** Travelpayouts 覆蓋率 spike(決策閘)→ **P2** 彈性行程日數 → **P3** 每日可靠更新 → **P4** 自家錯價偵測(由自己掃價歷史捉異常)→ **P5** 小紅書 scout → **P6** FB/IG scout(P5/P6 = reserve 返呢度原計劃嘅社交來源)。Phase 1 先用**免費** Travelpayouts API spike 覆蓋率,夠就用、唔夠 fallback 去上面講嘅 ±2 自掃法。詳見 `.planning/research/REFERENCE-SITE.md` + `DATA-SOURCES.md`。
+>
+> 下一步:`/gsd-plan-phase 1`。⬇️ 以下為**舊判斷(2026-06-13,已更正,保留作記錄)**:
+
+### ⛔ 舊判斷 — 「2-14 日 trip length 完整 grid」(當時誤以為做唔到)
 - User 想要參考網站咁:每個目的地每月,**所有出發日 × 所有 2-14 日行程長度**嘅最平/2nd/3rd 價(完整 depart×return 矩陣)。
 - **硬牆**:fast-flights 一個 query 淨係問一對日期(`flights.proto` 得單一 `date`,冇 calendar)。Brute-force = 28 日 × 13 trip-length × 7 月 × 171 線 ≈ **436k query/日**,就算 20 雲端 job 都 ~33h/job,**做唔到**。
 - **R&D 試過攞 Google 真 date-grid 都失敗**:HTTP 回應係空殼頁(冇 calendar)、截唔到 batchexecute XHR、Playwright 爬 price-graph DOM 唔穩。Google Flights 重度反爬。
