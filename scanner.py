@@ -11,6 +11,7 @@ scanner.py — 引擎A:fast-flights 掃描器(Phase 1A,v3 雙層版)
     uv run python scanner.py --samples 1 --resume # 接力:沿用今日已掃,只補失敗+未掃
     uv run python scanner.py --max-routes 5       # 只掃頭 5 條 route
     uv run python scanner.py --no-browser         # 唔用真瀏覽器後備(CI 未裝 playwright 時)
+    uv run python scanner.py --only HKG-KUL --grid --offset 2 --refine-days 10  # 平價日+可變行程日
 
 雙層查價策略(2026-06-13 實測得出):
     Tier 1 — HTTP 直撈(快、平):Google 對熱門 route 近中期日子會 server-render,
@@ -24,6 +25,13 @@ scanner.py — 引擎A:fast-flights 掃描器(Phase 1A,v3 雙層版)
     * 每月只抽 1–4 個代表日;query 之間隨機等 3–8 秒;每 30 個 query 唞 20–40 秒。
     * 連續 10 個 query 真失敗 → 自動唞 10–15 分鐘再戰(最多 3 次),先至放棄。
     * 每完成一條 route 即刻寫檔;--resume 可以接力,唔會由頭嚟過。
+
+return-offset refine 策略(Phase 2,--grid 配合使用):
+    grid pass 搵到每月所有平價出發日後,對頭 refine_days(預設 10)個最平出發日
+    施加 ±offset(預設 ±2)嘅 return-offset 內層,試 5 個唔同行程日數,取最平。
+    每日跳過已知嘅 fixed-stay dur(嗰個價已有),實際 ~4 個新 query/日。
+    每 route-month 新增 query 上限:refine_days × 2 × offset = 10 × 2 × 2 = 40。
+    連 grid ~28 日 = 總 ~60-70 queries,全部經既有 on_query/cool_down/guard pacing。
 """
 from __future__ import annotations
 
@@ -55,6 +63,8 @@ MAX_LONG_RESTS = 3     # 自動唞長覺次數上限
 COOL_EVERY = 30        # 每 N 個 query 唞 20–40 秒
 MIN_FREE_BYTES = 1_200_000_000  # 硬碟剩低過 1.2GB 就安全暫停(部機個碟好逼,爆碟教訓)
 BEYOND_SKIP_AFTER = 2  # 同一 route 連續 N 個月「Google 未有數據」→ 跳過剩低月份
+MIN_NIGHTS = 2         # return-offset refine 最短行程日數(clamp 下限)
+MAX_NIGHTS = 14        # return-offset refine 最長行程日數(clamp 上限)
 
 
 class ShellPage(Exception):
@@ -307,6 +317,92 @@ def deep_link(tfs: str, currency: str) -> str:
     return f"{GF_URL}?tfs={tfs}&hl=zh-HK&curr={currency}"
 
 
+def refine_period_lengths(
+    origin: str,
+    dest: str,
+    periods: list,
+    dur: int,
+    refine_days: int,
+    offset: int,
+    currency: str,
+    browser,
+    query_fn=None,
+    on_query=None,
+) -> list:
+    """
+    對 periods(已 price 升序)嘅頭 refine_days 個出發日施加 return-offset 內層:
+    試 dur±offset 嘅唔同行程日數(clamp [MIN_NIGHTS, MAX_NIGHTS]),取最平嗰個。
+    若所有 offset candidate 都貴過原本 fixed-stay 價,保留原 period(唔退步)。
+    所有 period 統一補 days = (return - depart).days 欄。
+    回新 periods list(price 升序)。
+
+    每個 query 都經 on_query callback(由 scan_month 注入,含 pace/delay/cool_down/guard)。
+    query_fn 預設用模組層 query_roundtrip(可 monkeypatch 測試用)。
+    """
+    if query_fn is None:
+        query_fn = query_roundtrip
+
+    result_periods: list = []
+
+    for i, period in enumerate(periods):
+        dep_str = period.get("depart")
+        ret_str = period.get("return")
+        orig_price = period.get("price")
+
+        # 補 days 欄(固定值;refine 後的日期另計)
+        if dep_str and ret_str:
+            dep_date = dt.date.fromisoformat(dep_str)
+            ret_date = dt.date.fromisoformat(ret_str)
+            base_days = (ret_date - dep_date).days
+        else:
+            base_days = None
+
+        # 只 refine 頭 refine_days 個 period
+        if i >= refine_days or not dep_str:
+            new_p = dict(period)
+            new_p["days"] = base_days
+            result_periods.append(new_p)
+            continue
+
+        dep_date = dt.date.fromisoformat(dep_str)
+
+        # 生成 candidate nights:dur±offset,clamp [MIN_NIGHTS, MAX_NIGHTS],去重,跳過 dur(已知)
+        raw_nights = range(dur - offset, dur + offset + 1)
+        candidate_nights = sorted({
+            max(MIN_NIGHTS, min(MAX_NIGHTS, n))
+            for n in raw_nights
+            if n != dur  # 跳過已知 fixed-stay(慳 query)
+        })
+
+        best_price = orig_price  # 只有更平才換(唔退步)
+        best_period = dict(period)
+        best_period["days"] = base_days  # 預設用原 period 的 days
+
+        for nights in candidate_nights:
+            cand_ret = dep_date + dt.timedelta(days=nights)
+            r = query_fn(origin, dest, dep_date, cand_ret, currency, browser)
+            if on_query is not None:
+                on_query(r)
+            if r.get("status") == "ok":
+                cand_price = r.get("price")
+                if cand_price and (best_price is None or cand_price < best_price):
+                    best_price = cand_price
+                    best_period = {
+                        "depart": dep_str,
+                        "return": cand_ret.isoformat(),
+                        "price": cand_price,
+                        "airline": r.get("airline"),
+                        "google_flights": deep_link(r["tfs"], currency),
+                        "days": nights,
+                    }
+
+        result_periods.append(best_period)
+
+    # 回傳 price 升序
+    result_periods.sort(key=lambda p: p.get("price") or float("inf"))
+    return result_periods
+
+
 def build_routes(cfg: dict) -> list:
     """origins × destinations 全組合,跳過 exclude 名單。"""
     exclude = {str(x).strip().upper() for x in (cfg.get("exclude") or [])}
@@ -352,6 +448,12 @@ def main() -> int:
     ap.add_argument("--slice", default="", help="分片 K/N(Phase 4 matrix:每 job 掃 routes[K::N],各用各 IP)")
     ap.add_argument("--resume", action="store_true", help="沿用今日已掃結果,只補失敗月份+未掃 route")
     ap.add_argument("--no-browser", action="store_true", help="停用真瀏覽器後備(淨 HTTP)")
+    ap.add_argument("--offset", type=int, default=2,
+                    help="return-offset 闊度:對每個平價出發日試 dur±offset 嘅行程日數(預設 2→5 個 return)")
+    ap.add_argument("--refine-days", type=int, default=10,
+                    help="每月只對最平頭 N 個出發日施加 refine(預設 10;控制 query 量)")
+    ap.add_argument("--no-refine", action="store_true",
+                    help="停用 return-offset refine,退回純 fixed-stay grid(舊行為)")
     args = ap.parse_args()
 
     cfg = yaml.safe_load((ROOT / "routes.yaml").read_text(encoding="utf-8"))
@@ -462,13 +564,11 @@ def main() -> int:
         oks: list = []
         tried = failed = beyond = 0
         last_err = ""
-        for day in sample_days:
-            depart = dt.date(y, m, min(day, calendar.monthrange(y, m)[1]))
-            if depart < today + dt.timedelta(days=3):
-                continue  # 太近/已過嘅日子唔查
-            ret = depart + dt.timedelta(days=stay)
-            r = query_roundtrip(origin, dest, depart, ret, currency, browser)
-            tried += 1
+
+        # on_query callback:每個 query 後統一更新 pace/stats/guard/delay/cool_down
+        # (grid pass 同 refine pass 共用,鐵律 4)
+        def on_query(r: dict) -> None:
+            nonlocal failed, last_err
             pace["q"] += 1
             scan["stats"]["queries"] += 1
             if r.get("via") == "browser":
@@ -478,14 +578,12 @@ def main() -> int:
                 guard["consec"] = 0
                 if r.get("via") == "browser":
                     scan["stats"]["tier2_saved"] += 1
-                oks.append({**r, "depart": depart.isoformat(), "return": ret.isoformat()})
             elif r["status"] == "no_flights":
                 scan["stats"]["no_flights"] += 1
                 guard["consec"] = 0
             elif r["status"] == "beyond_data":
                 scan["stats"]["beyond_data"] += 1
-                beyond += 1
-                guard["consec"] = 0  # Google 有答覆,只係未有數據 — 唔算被擋
+                guard["consec"] = 0
             else:
                 scan["stats"]["failed"] += 1
                 failed += 1
@@ -493,6 +591,24 @@ def main() -> int:
                 guard["consec"] += 1
             time.sleep(random.uniform(float(delay_lo), float(delay_hi)))
             cool_down()
+            if guard["consec"] >= ABORT_AFTER:
+                rest_or_abort()
+
+        for day in sample_days:
+            depart = dt.date(y, m, min(day, calendar.monthrange(y, m)[1]))
+            if depart < today + dt.timedelta(days=3):
+                continue  # 太近/已過嘅日子唔查
+            ret = depart + dt.timedelta(days=stay)
+            r = query_roundtrip(origin, dest, depart, ret, currency, browser)
+            tried += 1
+            beyond_before = beyond
+            # track beyond separately (on_query 無法 increment beyond)
+            if r["status"] == "beyond_data":
+                beyond += 1
+            on_query(r)
+            if r["status"] == "ok":
+                oks.append({**r, "depart": depart.isoformat(), "return": ret.isoformat()})
+
         if oks:
             oks.sort(key=lambda o: o["price"])
             top: list = []
@@ -502,18 +618,45 @@ def main() -> int:
                     continue
                 seen_dep.add(o["depart"])
                 top.append(o)
-            best = top[0]
+            # 砌 periods(先 fixed-stay,之後 refine 可能替換)
             periods = [{"depart": o["depart"], "return": o["return"], "price": o["price"],
                         "airline": o["airline"], "google_flights": deep_link(o["tfs"], currency)}
                        for o in top]
+
+            # refine pass:若 --grid 且未 disable,對頭 refine_days 個出發日做 return-offset 掃
+            if args.grid and not args.no_refine:
+                periods = refine_period_lengths(
+                    origin=origin,
+                    dest=dest,
+                    periods=periods,
+                    dur=stay,
+                    refine_days=args.refine_days,
+                    offset=args.offset,
+                    currency=currency,
+                    browser=browser,
+                    query_fn=query_roundtrip,
+                    on_query=on_query,
+                )
+            else:
+                # 非 refine 模式:補 days 欄
+                for p in periods:
+                    if p.get("depart") and p.get("return"):
+                        p["days"] = (
+                            dt.date.fromisoformat(p["return"]) -
+                            dt.date.fromisoformat(p["depart"])
+                        ).days
+
+            best_p = periods[0] if periods else top[0]
+            best = top[0]  # via / stops / duration 仍取原 grid best(refine 唔改呢啲)
             via = "🌐" if best.get("via") == "browser" else ""
             return {
                 "month": mlabel, "status": "ok",
-                "price": best["price"], "currency": currency,
-                "depart": best["depart"], "return": best["return"],
+                "price": best_p.get("price", best["price"]), "currency": currency,
+                "depart": best_p.get("depart", best["depart"]),
+                "return": best_p.get("return", best["return"]),
                 "airline": best["airline"], "stops": best["stops"],
                 "duration": best["duration"], "price_trend": best["price_trend"],
-                "google_flights": deep_link(best["tfs"], currency),
+                "google_flights": best_p.get("google_flights", deep_link(best["tfs"], currency)),
                 "periods": periods,
                 "samples_tried": tried, "samples_failed": failed,
                 "via": best.get("via", "http"), "_via_mark": via,
