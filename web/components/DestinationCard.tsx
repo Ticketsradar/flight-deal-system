@@ -8,6 +8,7 @@ function dayLabel(d: string | null): string {
   return d ? `${parseInt(d.split("-")[2], 10)}號` : "?";
 }
 function stayDays(p: Period): number | null {
+  if (p.days != null) return p.days;
   if (!p.depart || !p.return) return null;
   return Math.round((new Date(p.return).getTime() - new Date(p.depart).getTime()) / 86400000);
 }
@@ -59,7 +60,17 @@ export default function DestinationCard({
   const prices = all.map((x) => x.p.price ?? Infinity).filter((p) => p < Infinity);
   const min = prices.length ? Math.min(...prices) : 0;
   const cheapCount = all.filter((x) => (x.p.price ?? Infinity) <= min * 1.04).length;
-  const stay = all.length ? stayDays(all[0].p) : null;
+
+  // 計所有 period 嘅行程日數,取 min/max 顯示範圍
+  const allDays = all.map((x) => stayDays(x.p)).filter((d): d is number => d != null);
+  const minStay = allDays.length ? Math.min(...allDays) : null;
+  const maxStay = allDays.length ? Math.max(...allDays) : null;
+  const stayRange =
+    minStay != null && maxStay != null
+      ? minStay === maxStay
+        ? `${minStay}日`
+        : `${minStay}–${maxStay}日`
+      : null;
 
   const byMonth = new Map<string, Period[]>();
   for (const { month, p } of all) {
@@ -86,7 +97,7 @@ export default function DestinationCard({
             <span className="text-[11px] font-normal opacity-60"> 來回</span>
           </div>
           <div className="text-[11px] opacity-60">
-            {cheapCount} 個最平日{stay ? ` · ${stay}日` : ""}
+            {cheapCount} 個最平日{stayRange ? ` · ${stayRange}` : ""}
           </div>
         </div>
         <span className="dc-caret text-sm opacity-60">▾</span>

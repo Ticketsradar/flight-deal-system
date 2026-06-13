@@ -8,6 +8,7 @@ export interface Period {
   price: number | null;
   airline?: string | null;
   google_flights?: string | null;
+  days?: number | null;
 }
 
 export interface CheapFlight {
