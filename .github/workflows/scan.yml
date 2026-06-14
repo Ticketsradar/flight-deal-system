@@ -21,7 +21,7 @@
 #   fair-use 政策,若 GitHub 來信警告 / shard 經常變紅,就調返「每 2–3 日轉一圈」
 #   (減 shard + 加返 --budget)。詳見 .planning/research/DAILY-UPDATES.md。
 
-name: Stream A — 平機票每日全量掃描
+name: Stream A — 平機票每日全量掃描(further-optimised ⚡ workers=2)
 
 on:
   schedule:
