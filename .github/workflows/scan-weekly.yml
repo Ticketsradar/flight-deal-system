@@ -12,9 +12,9 @@
 name: Stream A — 每週全日曆 sweep
 
 on:
-  schedule:
-    - cron: "0 2 * * 0"  # 每週日 02:00 UTC(香港時間週日上午 10:00)
-  workflow_dispatch: {}  # 可手動觸發測試
+  # schedule:  # ← 03-04 rollout:量度 Google block rate 後先 enable(同 daily cron 一齊決定)
+  #   - cron: "0 2 * * 0"  # 每週日 02:00 UTC(香港時間週日上午 10:00)
+  workflow_dispatch: {}  # 可手動觸發測試(rollout 時先用呢個量度封鎖率)
 
 # 防止上週 run 未完今週再觸發(cancel-in-progress:false = 讓舊嘅跑完)
 concurrency:

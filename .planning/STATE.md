@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-06-14)
 
 ## Current Position
 
-Phase: 3 (可靠每日更新) — EXECUTING (plan 3 of 4 done)
-Plan: 4 of 4 in current phase (next: 03-04 GitHub rollout checkpoint)
-Status: Executing → 03-04(⚠️ Wave 3 = GitHub rollout,要 push + Secrets + 量度封鎖率先開 cron)
-Last activity: 2026-06-14 -- Phase 3 Plan 03 完成:scanner --stale-first/--budget/--grid-step + scan.yml if:always/concurrency + scan-weekly.yml
+Phase: 3 (可靠每日更新) — Wave 1+2 本機 code ✅(3/4 plans);Wave 3 = 03-04 GitHub rollout 待 user
+Plan: 3 of 4 done (03-01/02/03 ✅);next 03-04(autonomous:false — push + Secrets + 量度封鎖率)
+Status: ⏸ 停喺 Wave 3 — 要 user push 上 GitHub + set Secrets + 手動 dispatch 量度 Google 封鎖率,夠穩先開 cron
+Last activity: 2026-06-14 -- Phase 3 Wave 1+2 完成(db scanned_at、web freshness、scanner stale-first、scan.yml/scan-weekly if:always;兩個 cron 都 commented 住等量度)
 
-Progress: [███░░░░░░░] 33% (Phase 1 spike + Phase 2 done / 6;Phase 3 planned)
+Progress: [████░░░░░░] ~42% (Phase 1 + Phase 2 + Phase 3 code done;Phase 3 GitHub rollout pending)
 
 ## Performance Metrics
 
