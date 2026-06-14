@@ -1,12 +1,17 @@
 ---
-gsd_state_version: '1.0'  # placeholder; syncStateFrontmatter overwrites on first state.* call
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
 status: planning
+stopped_at: Phase 2 完成(彈性行程日數,user approved)。下一步 /gsd-plan-phase 3
+last_updated: "2026-06-14T00:00:00.000Z"
+last_activity: 2026-06-14 -- Phase 2 完成 + verified (彈性行程日數)
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 0
-  completed_plans: 0
-  percent: 16
+  completed_phases: 2
+  total_plans: 1
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -16,20 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-14)
 
 **Core value:** 畀香港用戶一個可信、每日更新嘅地方,快速搵到值得買嘅平機票同真·錯價票,並一撳對返 Google Flights 實時價。
-**Current focus:** Phase 2 — 彈性行程日數(FALLBACK:fast-flights 平價日 ±2 自掃)
+**Current focus:** Phase 3 — 可靠每日更新(下一步)
 
 ## Current Position
 
-Phase: 2 of 6 (彈性行程日數)— ✅ planned,ready to execute
-Plan: 1 plan (02-PLAN.md);plan-checker PASSED(2 個非阻塞 warning)
-Status: Ready to execute → /gsd-execute-phase 2
-Last activity: 2026-06-14 — Phase 2 計劃完成 + plan-checker 通過(FALLBACK ±2 自掃:平價日加 dur±2 return-offset、加 `days` 欄、UI 微調;3 task)
+Phase: 2 (彈性行程日數) — ✅ COMPLETE (user approved 2026-06-14);next: Phase 3
+Plan: 1 of 1 complete
+Status: Phase 2 done — ready to plan Phase 3
+Last activity: 2026-06-14 -- Phase 2 完成 + verified(scanner ±2 refine、可變行程日數、NGO 出 4–8 日)
 
-Progress: [█░░░░░░░░░] 16% (1/6 phases done;Phase 2 planned)
+Progress: [███░░░░░░░] 33% (Phase 1 spike + Phase 2 done / 6)
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 0
 - Average duration: - min
 - Total execution time: 0 hours
@@ -41,6 +47,7 @@ Progress: [█░░░░░░░░░] 16% (1/6 phases done;Phase 2 planned)
 | - | - | - | - |
 
 **Recent Trend:**
+
 - Last 5 plans: -
 - Trend: -
 

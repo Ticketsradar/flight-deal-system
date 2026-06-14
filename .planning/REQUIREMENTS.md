@@ -9,9 +9,9 @@
 
 ### Flex (彈性行程日數)
 
-- [ ] **FLEX-01**: 用戶喺每張目的地卡,睇到**多種行程日數**(2–14 日範圍)嘅平價出發日,而唔再淨係固定一種日數
-- [ ] **FLEX-02**: 每個平價日子清楚標明**行程日數 + 來回價**(似參考網站「11號 6日」),並按價分層顯示最平 / 次平 / 第三平
-- [ ] **FLEX-03**: 撳任何一個平價日子,跳去對應日期 + 行程長度嘅 Google Flights 對返實時價
+- [x] **FLEX-01**: 用戶喺每張目的地卡,睇到**多種行程日數**(2–14 日範圍)嘅平價出發日,而唔再淨係固定一種日數 — ✅ Phase 2
+- [x] **FLEX-02**: 每個平價日子清楚標明**行程日數 + 來回價**(似參考網站「11號 6日」),並按價分層顯示最平 / 次平 / 第三平 — ✅ Phase 2
+- [x] **FLEX-03**: 撳任何一個平價日子,跳去對應日期 + 行程長度嘅 Google Flights 對返實時價 — ✅ Phase 2
 
 ### Daily (每日更新)
 
@@ -57,9 +57,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FLEX-01 | Phase 2 | Pending |
-| FLEX-02 | Phase 2 | Pending |
-| FLEX-03 | Phase 2 | Pending |
+| FLEX-01 | Phase 2 | Complete |
+| FLEX-02 | Phase 2 | Complete |
+| FLEX-03 | Phase 2 | Complete |
 | DAILY-01 | Phase 3 | Pending |
 | DAILY-02 | Phase 3 | Pending |
 | DAILY-03 | Phase 3 | Pending |

@@ -17,7 +17,7 @@
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Travelpayouts 覆蓋率 Spike（決策閘）** ✅ 2026-06-14 — 拍板 **FALLBACK**(Travelpayouts 來回數據太疏);詳見 `research/TRAVELPAYOUTS-SPIKE.md`
-- [ ] **Phase 2: 彈性行程日數** - 每個平價日標明行程日數 + 來回價,按價分層,撳跳對應 depart+return 嘅 Google Flights
+- [x] **Phase 2: 彈性行程日數** ✅ 2026-06-14 — 每個平價日標明行程日數 + 來回價,按價分層,撳跳對應 depart+return 嘅 Google Flights(NGO 實證出 4–8 日)
 - [ ] **Phase 3: 可靠每日更新** - 每日可靠自動更新 + 容錯 partial upload + 網站顯示真實「最後更新」
 - [ ] **Phase 4: 自家錯價偵測** - price_history 表 + 統計異常偵測,候選餵入現有 master,RSS 來源照行
 - [ ] **Phase 5: 小紅書(RedNote)scout** - deploy 小紅書 scout(MediaCrawler + cookie/session 登入),收料 → 現有 Haiku 篩 → 餵現有 master → notifier → db(原計劃 add-on 來源)
@@ -119,7 +119,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Travelpayouts 覆蓋率 Spike（決策閘) | 1/1 | ✅ Complete (FALLBACK) | 2026-06-14 |
-| 2. 彈性行程日數 | 0/1 | Planned (checker PASS) | - |
+| 2. 彈性行程日數 | 1/1 | ✅ Complete | 2026-06-14 |
 | 3. 可靠每日更新 | 0/TBD | Not started | - |
 | 4. 自家錯價偵測 | 0/TBD | Not started | - |
 | 5. 小紅書(RedNote)scout | 0/TBD | Not started | - |
