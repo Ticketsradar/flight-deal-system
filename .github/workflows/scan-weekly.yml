@@ -1,0 +1,58 @@
+# Stream A — 每週全日曆 sweep
+# ============================================================
+# 每週日 02:00 UTC 跑一次完整掃描:12 個 shard,每 shard 最多 350 分鐘,
+# 全月每一日(--grid)+ return-offset refine 開著(預設),--resume 讓超時
+# 嘅 shard 下週自動補回未掃部分。
+#
+# 設計目標:確保唔會有路線超過 7 日冇刷新(daily incremental 嘅安全網)。
+#
+# 詳見 .planning/research/DAILY-UPDATES.md section 5b 以及 6h-wall 說明。
+# ⚠️ 注意:GitHub runner IP 係共用 Azure pool,cron 啟用前需觀察 block rate。
+
+name: Stream A — 每週全日曆 sweep
+
+on:
+  schedule:
+    - cron: "0 2 * * 0"  # 每週日 02:00 UTC(香港時間週日上午 10:00)
+  workflow_dispatch: {}  # 可手動觸發測試
+
+# 防止上週 run 未完今週再觸發(cancel-in-progress:false = 讓舊嘅跑完)
+concurrency:
+  group: scan-weekly
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350  # 唔好爆 GitHub 6 小時 job 上限(留緩衝)
+    strategy:
+      fail-fast: false  # 一片爆唔好拖死其他片
+      max-parallel: 12
+      matrix:
+        k: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]  # 12 shards;改數量記得連 --slice 分母一齊改
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: 裝依賴
+        run: uv sync
+
+      - name: 掃描分片 ${{ matrix.k }}/12(全日曆,refine ON,resume)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+        run: |
+          uv run python scanner.py \
+            --slice ${{ matrix.k }}/12 \
+            --grid \
+            --resume \
+            --no-browser
+
+      # DAILY-03:scan 超時/失敗都要跑 upload,確保部分結果出街
+      - name: 上傳已完成部分(即使掃描失敗)
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: uv run python upload.py
