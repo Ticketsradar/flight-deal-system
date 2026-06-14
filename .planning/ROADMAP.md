@@ -60,7 +60,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. `scan.yml` 修好:`upload.py` 行做一個 `if: always()`-style 嘅獨立 step,就算掃描超時 / 失敗,已完成部分照樣 upload 出街(唔會成日 0 更新)— DAILY-03
   3. `db.cheap_flight_rows()` 修好,UPDATE 時會寫 `scanned_at`(用 scan 嘅 `generated_at`),per-route 新鮮度真實 — DAILY-02 基建
   4. 網站每張卡(或全站)顯示 **真實「最後更新」** 時間,反映實際 per-route 新鮮度(例如「更新於 2 日前」)— DAILY-02
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 03-01-PLAN.md — db scanned_at fix (DAILY-02 root cause) + db.stale_routes() primitive + offline tests
+- [ ] 03-02-PLAN.md — website per-route + global freshness display (DAILY-02 UI) + next build
+- [ ] 03-03-PLAN.md — scanner --stale-first/--budget/--grid-step (DAILY-01) + scan.yml split-step if:always upload + weekly sweep (DAILY-03)
+- [ ] 03-04-PLAN.md — GitHub rollout: expectation + push/Secrets + dispatch & measure block rate -> cron decision (checkpoints)
 **UI hint**: yes
 
 ### Phase 4: 自家錯價偵測
@@ -120,7 +125,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Travelpayouts 覆蓋率 Spike（決策閘) | 1/1 | ✅ Complete (FALLBACK) | 2026-06-14 |
 | 2. 彈性行程日數 | 1/1 | ✅ Complete | 2026-06-14 |
-| 3. 可靠每日更新 | 0/TBD | Not started | - |
+| 3. 可靠每日更新 | 0/4 | Planned | - |
 | 4. 自家錯價偵測 | 0/TBD | Not started | - |
 | 5. 小紅書(RedNote)scout | 0/TBD | Not started | - |
 | 6. Facebook / Instagram scout | 0/TBD | Not started | - |
