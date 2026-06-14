@@ -1,23 +1,28 @@
-# Stream A — 平機票每日增量掃描
+# Stream A — 平機票每日全量掃描(全部 171 條每日刷,browser 後備 ON)
 # ============================================================
-# 每日增量:6 個 shard 並行,每 shard 最多 400 queries(~72 分鐘),
-# --stale-first 令最舊嘅路線優先被刷新;--grid-step 3 令每月只取 ~11 日代表點
-# (而唔係全月 31 日),控制每日總 query 量遠低於 6 小時 GitHub wall。
+# public repo Actions 免費無限 → 每日掃晒全部 171 條 route(grid-step 3 + refine)。
+# 20 shard 並行,每 shard ~9 route × ~117 query ≈ ~1050 query;實測 ~11s/query
+#   → 每片 ~3.2 鐘跑完(遠離 GitHub 單 job 6 鐘上限,留好多緩衝畀封鎖慢嗰日)。
+# --stale-first:萬一某片超時,最舊嗰啲已優先掃好,最後跳過嘅係最新鮮嗰啲。
 #
-# DAILY-03 修復:scanner 同 upload 係兩個獨立 step;upload 用 if: always()
-# 確保就算 scanner 超時/失敗,已掃完嘅 data/scan_*.json 仍可上傳到 Supabase。
+# 雙層抓價:HTTP fast-flights(快)→ 撞到 Google 空殼頁軟封鎖就自動轉
+#   Playwright 真瀏覽器(行 JS,繞到封鎖;log 標 🌐)。03-04 量度證實雲端
+#   純 HTTP 會畀封(5/6 shard 紅),開咗 browser 後備就綠色可靠。
 #
-# 詳見 .planning/research/DAILY-UPDATES.md section 5b 以及 6h-wall 說明。
-# ⚠️ 注意:GitHub runner IP 係共用 Azure pool,Google 有可能 rate-limit。
-#    cron 需要喺 03-04 量度真實封鎖率後先開。
+# refine ON(--offset 2 / --refine-days 10):維持「彈性行程日數」(FLEX-01/02)。
+# DAILY-03 容錯:scanner 同 upload 拆兩 step,upload 用 if: always(),
+#   就算 scan 超時/失敗,已寫低嘅 data/scan_*.json 都照出街。
+#
+# ⚠️ 用量提示:全量每日 ≈ 20k query/日 ≈ ~80 機鐘/日。public Actions 雖免費但有
+#   fair-use 政策,若 GitHub 來信警告 / shard 經常變紅,就調返「每 2–3 日轉一圈」
+#   (減 shard + 加返 --budget)。詳見 .planning/research/DAILY-UPDATES.md。
 
-name: Stream A — 平機票每日增量掃描
+name: Stream A — 平機票每日全量掃描
 
 on:
-  # schedule:
-  #   - cron: "0 18 * * *"  # 每日 18:00 UTC = 02:00 香港時間
-  #   # ⛔ cron 暫時 comment 咗!要量度完 Google block rate(03-04 rollout checkpoint)先 uncomment。
-  workflow_dispatch: {}  # 可喺 GitHub Actions 頁面手動撳 Run
+  schedule:
+    - cron: "0 18 * * *"  # 每日 18:00 UTC = 02:00 香港時間(低峰時段)
+  workflow_dispatch: {}   # 亦可喺 Actions 頁手動觸發
 
 # 防止 cron delay 導致兩個 run 同時跑(cancel-in-progress:false = 讓舊嘅跑完)
 concurrency:
@@ -27,12 +32,12 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 90  # 6 shards x ~400 queries x ~10s ≈ 67 分鐘;留緩衝
+    timeout-minutes: 350  # 正常 ~3.2 鐘/片;封鎖慢嗰日都有大量緩衝至 6 鐘 wall
     strategy:
       fail-fast: false  # 一片爆唔好拖死其他片
-      max-parallel: 6
+      max-parallel: 20
       matrix:
-        k: [0, 1, 2, 3, 4, 5]  # 6 shards;改數量記得連 --slice 分母一齊改
+        k: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]  # 20 shards;改數量記得連 --slice 一齊改
 
     steps:
       - uses: actions/checkout@v4
@@ -40,20 +45,21 @@ jobs:
       - name: 裝依賴
         run: uv sync
 
-      - name: 掃描分片 ${{ matrix.k }}/6(增量,粗格,stale-first)
+      # GitHub runner 預設冇 chromium binary;browser 後備要用,喺度裝(+系統庫)
+      - name: 裝 Playwright chromium(+系統庫)
+        run: uv run playwright install --with-deps chromium
+
+      - name: 掃描分片 ${{ matrix.k }}/20(全量,粗格 step3,refine ON,browser 後備)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
         run: |
           uv run python scanner.py \
-            --slice ${{ matrix.k }}/6 \
+            --slice ${{ matrix.k }}/20 \
             --grid \
             --grid-step 3 \
-            --no-refine \
-            --stale-first \
-            --budget 400 \
-            --no-browser
+            --stale-first
 
       # DAILY-03:scan 超時/失敗都要跑 upload,確保部分結果出街
       - name: 上傳已完成部分(即使掃描失敗)
