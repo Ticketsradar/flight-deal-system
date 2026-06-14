@@ -53,7 +53,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-          REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+          # REDDIT_USER_AGENT not injected here — scanner.py never reads it;
+          # belongs in the scout/feeds step only (principle of least privilege)
         run: |
           uv run python scanner.py \
             --slice ${{ matrix.k }}/20 \
