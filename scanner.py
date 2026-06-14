@@ -109,6 +109,25 @@ def fetch_http(tfs: str, currency: str):
 
 # ------------------------------------------------------ Tier 2:真瀏覽器
 
+# 唔載入嘅資源類型:圖片/影片/字型/CSS —— 完全唔影響 DOM 入面嘅航班數據,
+# 但慳走大量下載,實測令頁面載入快幾倍(保留 document/script/xhr/fetch 等 JS 行到)。
+_BROWSER_BLOCK_TYPES = {"image", "media", "font", "stylesheet"}
+
+
+def _route_block_heavy(route) -> None:
+    """Playwright route handler:擋走重型資源加快載入,出事就照放行。"""
+    try:
+        if route.request.resource_type in _BROWSER_BLOCK_TYPES:
+            route.abort()
+        else:
+            route.continue_()
+    except Exception:
+        try:
+            route.continue_()
+        except Exception:
+            pass
+
+
 class BrowserFetcher:
     """長開一個 headless Chrome 重用(慳卻每次 3-4 秒嘅開機時間)。"""
 
@@ -141,6 +160,8 @@ class BrowserFetcher:
             self._ctx = self._browser.new_context(
                 user_agent=self.UA, viewport={"width": 1366, "height": 900},
                 locale="en-US")
+            # 擋走圖片/CSS/字型/影片:唔影響數據,大幅加快頁面載入
+            self._ctx.route("**/*", _route_block_heavy)
             self._page = self._ctx.new_page()
             self._fetches = 0
 
@@ -169,7 +190,7 @@ class BrowserFetcher:
                 self._ensure()
                 self._fetches += 1
                 page = self._page
-                page.goto(url, timeout=35000)
+                page.goto(url, timeout=35000, wait_until="domcontentloaded")
                 if page.url.startswith("https://consent.google.com"):
                     page.click('text="Accept all"')
                     page.wait_for_timeout(2000)
@@ -262,9 +283,7 @@ def query_roundtrip(origin: str, dest: str, depart: dt.date, ret: dt.date,
         except ShellPage:
             shells += 1
             last_err = f"空殼頁×{shells}"
-            if shells >= 2:
-                break  # HTTP 冇得救 — 升級真瀏覽器
-            time.sleep(random.uniform(3, 6))
+            break  # 1 個空殼頁就升級真瀏覽器:retry HTTP 多數冇用,browser 已優化到快
         except Blocked as e:
             last_err = str(e)
             time.sleep(random.uniform(8, 15))
