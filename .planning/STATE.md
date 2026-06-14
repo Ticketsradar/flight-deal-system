@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 spike 完成 → FALLBACK 拍板。下一步 /gsd-plan-phase 2(fast-flights 平價日 ±2 自掃,網站顯示行程日數)
-last_updated: "2026-06-14T03:46:33.647Z"
-last_activity: "2026-06-14 -- Phase 3 計劃完成(db scanned_at / web freshness / scanner stale-first incremental / scan.yml if:always / GitHub rollout checkpoints)"
+stopped_at: "Phase 3 Plan 03 完成 — scanner incremental flags + CI workflow restructure。下一步 03-04(GitHub rollout checkpoint)"
+last_updated: "2026-06-14T04:30:00.000Z"
+last_activity: "2026-06-14 -- Phase 3 Plan 03 完成:scanner --stale-first/--budget/--grid-step + scan.yml if:always/concurrency + scan-weekly.yml"
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 5
-  completed_plans: 2
-  percent: 17
+  completed_plans: 3
+  percent: 20
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-14)
 
 ## Current Position
 
-Phase: 3 (可靠每日更新) — ✅ PLANNED (4 plans / 3 waves,plan-checker PASS);ready to execute
-Plan: 1 of 4 in current phase
-Status: Ready to execute → /gsd-execute-phase 3(⚠️ Wave 3 = GitHub rollout,要 push + Secrets + 量度封鎖率先開 cron)
-Last activity: 2026-06-14 -- Phase 3 計劃完成(db scanned_at / web freshness / scanner stale-first incremental / scan.yml if:always / GitHub rollout checkpoints)
+Phase: 3 (可靠每日更新) — EXECUTING (plan 3 of 4 done)
+Plan: 4 of 4 in current phase (next: 03-04 GitHub rollout checkpoint)
+Status: Executing → 03-04(⚠️ Wave 3 = GitHub rollout,要 push + Secrets + 量度封鎖率先開 cron)
+Last activity: 2026-06-14 -- Phase 3 Plan 03 完成:scanner --stale-first/--budget/--grid-step + scan.yml if:always/concurrency + scan-weekly.yml
 
 Progress: [███░░░░░░░] 33% (Phase 1 spike + Phase 2 done / 6;Phase 3 planned)
 
@@ -64,6 +64,8 @@ Recent decisions affecting current work:
 - [Milestone]: 錯價票主力行「自家數據異常偵測」而非加外部來源(Phase 4)
 - [Milestone]: Reserve 返 user 原計劃嘅小紅書(Phase 5)/ FB·IG(Phase 6)社交 scout 做 committed scope,reuse 同一條 scout → master plumbing
 - [Research]: CLAUDE.md 舊「硬牆(43 萬 query)」假設係錯 — 參考網站只係 dur±2 window,fast-flights 加薄 ±N 內層幾千 query 就得
+- [Phase 3 Plan 03]: budget_reached() 喺每條 route 完成後先檢查,唔係 mid-route,確保 per-route 原子寫入唔被打斷
+- [Phase 3 Plan 03]: daily cron 喺 scan.yml 係 comment 咗 — 等 03-04 量度真實 Google block rate 先 uncomment
 
 ### Pending Todos
 
@@ -77,7 +79,7 @@ None yet.
 
 - [Phase 1 ✅ resolved]: spike 證實 Travelpayouts 來回數據太疏 → FALLBACK;Phase 2/3 行 fast-flights 自掃路徑(month-matrix 單程數據可留作可選 anchor 優化)
 - [Known bug]: `db.cheap_flight_rows()` 冇寫 `scanned_at` → UPDATE 唔更新時間戳(Phase 3 修)
-- [Known bug]: `scan.yml` 一步兩 command,掃描超時被 kill 就連 `upload.py` 都唔跑 = 部分更新出唔到街(Phase 3 修)
+- [Known bug ✅ Phase 3 Plan 03 修]: `scan.yml` 一步兩 command → 改成獨立 step + if: always()
 - [Phase 4]: 異常偵測有 cold-start caveat,需約 1 星期歷史先準;由 dated `scan_*.json` backfill bootstrap
 - [Phase 5]: 小紅書 scout 需 MediaCrawler + cookie/session 登入(session 檔 gitignored),反爬高,慢 cadence
 - [Phase 6]: FB/IG 反爬/ToS friction 最高,用 Apify 或半人手;照原計劃排最後
@@ -96,6 +98,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-14T03:46:33.641Z
-Stopped at: Phase 1 spike 完成 → FALLBACK 拍板。下一步 /gsd-plan-phase 2(fast-flights 平價日 ±2 自掃,網站顯示行程日數)
+Last session: 2026-06-14T04:30:00.000Z
+Stopped at: Completed 03-03-PLAN.md (scanner incremental flags + CI workflow restructure)
 Resume file: None
