@@ -308,7 +308,7 @@ def query_roundtrip(origin: str, dest: str, depart: dt.date, ret: dt.date,
         if status == "no_flights":
             return {"status": "no_flights", "tfs": tfs, "via": "browser"}
         if status == "beyond":
-            return {"status": "beyond_data", "tfs": tfs}
+            return {"status": "beyond_data", "tfs": tfs, "via": "browser"}
         last_err = payload or "browser_fail"
 
     return {"status": "failed", "error": last_err, "tfs": tfs}
