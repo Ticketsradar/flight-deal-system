@@ -40,7 +40,8 @@ def main() -> int:
     if scan_path:
         scan = json.loads(Path(scan_path).read_text(encoding="utf-8"))
         n_cheap = db.push_cheap_flights(scan)
-        db.set_meta("last_updated_stream_a", scan.get("scan_date", ""))
+        db.set_meta("last_updated_stream_a",
+                    scan.get("generated_at") or scan.get("scan_date", ""))
         log(f"Stream A {Path(scan_path).name}: cheap_flights {n_cheap} 行")
     else:
         log("冇 scan_*.json — 跳過 Stream A")

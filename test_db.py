@@ -102,6 +102,75 @@ def main() -> None:
     print(("✅" if cond else "❌"), "未配置 → 0(no-op,唔當機)")
     ok = ok and cond
 
+    # ── Task 1: scanned_at threaded into cheap_flight_rows ──────────────────
+    # Positive: generated_at in scan_doc → every row carries it as scanned_at
+    scan_with_ts = {
+        "generated_at": "2026-06-14T09:00:00",
+        "routes": [
+            {"origin": "HKG", "dest": "NRT", "region": "東北亞", "months": [
+                {"month": "2026-08", "status": "ok", "price": 2426, "currency": "HKD",
+                 "depart": "2026-08-30", "return": "2026-09-05", "airline": "CX",
+                 "google_flights": "https://g/nrt"},
+            ]},
+            {"origin": "HKG", "dest": "TPE", "region": "東北亞", "months": [
+                {"month": "2026-08", "status": "ok", "price": 900, "currency": "HKD",
+                 "depart": "2026-08-10", "return": "2026-08-14", "airline": "CI",
+                 "google_flights": "https://g/tpe"},
+            ]},
+        ],
+    }
+    rows_ts = db.cheap_flight_rows(scan_with_ts)
+    cond = (len(rows_ts) == 2
+            and all(r.get("scanned_at") == "2026-06-14T09:00:00" for r in rows_ts))
+    print(("✅" if cond else "❌"), "scanned_at == generated_at on every row:", [r.get("scanned_at") for r in rows_ts])
+    ok = ok and cond
+
+    # Fallback: no generated_at → scanned_at is a non-empty ISO string (not None)
+    scan_no_ts = {
+        "routes": [
+            {"origin": "HKG", "dest": "BKK", "region": "東南亞", "months": [
+                {"month": "2026-08", "status": "ok", "price": 500, "currency": "HKD",
+                 "depart": "2026-08-01", "return": "2026-08-07", "airline": "HX",
+                 "google_flights": "https://g/bkk"},
+            ]},
+        ],
+    }
+    rows_no_ts = db.cheap_flight_rows(scan_no_ts)
+    fallback_val = rows_no_ts[0].get("scanned_at") if rows_no_ts else None
+    cond = (len(rows_no_ts) == 1
+            and fallback_val is not None
+            and isinstance(fallback_val, str)
+            and len(fallback_val) >= 10)
+    print(("✅" if cond else "❌"), "scanned_at fallback(no generated_at) → non-empty ISO str:", fallback_val)
+    ok = ok and cond
+
+    # Existing assertions remain: cheap_flight_rows still produces correct rows
+    # (already covered by the earlier flat test)
+
+    # ── Task 2: _order_stale + stale_routes no-op ───────────────────────────
+    # Pure ordering: null/never-scanned FIRST, then oldest → newest
+    raw_rows = [
+        {"origin": "HKG", "destination": "NRT", "scanned_at": "2026-06-13T10:00:00"},
+        {"origin": "HKG", "destination": "BKK", "scanned_at": None},
+        {"origin": "HKG", "destination": "TPE", "scanned_at": "2026-06-10T08:00:00"},
+    ]
+    ordered = db._order_stale(raw_rows)
+    names = [r["destination"] for r in ordered]
+    cond = (names == ["BKK", "TPE", "NRT"])
+    print(("✅" if cond else "❌"), "_order_stale: null first, then oldest→newest:", names)
+    ok = ok and cond
+
+    # Each entry in _order_stale result has "origin", "destination", "last"
+    cond = all("last" in r and "origin" in r and "destination" in r for r in ordered)
+    print(("✅" if cond else "❌"), "_order_stale keys: origin/destination/last present")
+    ok = ok and cond
+
+    # stale_routes() returns [] when unconfigured (no network, no crash)
+    result = db.stale_routes(c={"url": "", "key": ""})
+    cond = result == []
+    print(("✅" if cond else "❌"), "stale_routes() unconfigured → []:", result)
+    ok = ok and cond
+
     print()
     print("🎉 db 純邏輯測試通過" if ok else "⚠️ db 測試有失敗")
     sys.exit(0 if ok else 1)

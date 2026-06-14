@@ -11,6 +11,7 @@ db.py — Supabase 寫入 / 讀取(Phase 2.5)
 """
 from __future__ import annotations
 
+import datetime as dt
 import os
 import time
 
@@ -95,7 +96,12 @@ def error_fare_row(d: dict) -> dict | None:
 
 
 def cheap_flight_rows(scan_doc: dict) -> list[dict]:
-    """scanner scan_*.json → cheap_flights 行(展平 routes × status==ok 月份)。"""
+    """scanner scan_*.json → cheap_flights 行(展平 routes × status==ok 月份)。
+    每行帶 scanned_at = scan_doc["generated_at"](若有)或當前時間(ISO),
+    確保 upsert UPDATE 時 scanned_at 真正更新,唔會凍咗喺第一次 INSERT 嘅 default now()。
+    """
+    scanned_at = (scan_doc.get("generated_at")
+                  or dt.datetime.now().isoformat(timespec="seconds"))
     rows = []
     for rt in scan_doc.get("routes", []) or []:
         origin, dest, region = rt.get("origin"), rt.get("dest"), rt.get("region")
@@ -115,6 +121,7 @@ def cheap_flight_rows(scan_doc: dict) -> list[dict]:
                 "gflights_url": mo.get("google_flights"),
                 "tripcom_url": tripcom,
                 "periods": mo.get("periods"),  # top-3 平價時段(jsonb)
+                "scanned_at": scanned_at,       # 明確覆寫,UPDATE 時時間戳真正推進
             })
     return rows
 
@@ -163,6 +170,55 @@ def select(table: str, params: str = "select=*&limit=5", c: dict | None = None) 
     except Exception as e:  # noqa: BLE001
         log(f"select {table} 失敗:{e}")
         return []
+
+
+def _order_stale(rows: list[dict]) -> list[dict]:
+    """純本地排序:把 origin/destination/scanned_at 行列摺疊成一行/route pair,
+    取最舊 scanned_at(null = 從未掃 = 最舊),由舊到新排列。
+    回 [{"origin","destination","last"},...] 排好序。
+    """
+    seen: dict[tuple, str | None] = {}
+    for r in rows:
+        key = (r.get("origin"), r.get("destination"))
+        val = r.get("scanned_at")
+        if key not in seen:
+            seen[key] = val
+        else:
+            # keep the minimum (oldest) — None beats any timestamp
+            prev = seen[key]
+            if prev is None:
+                pass  # None already = stalest, keep it
+            elif val is None:
+                seen[key] = None
+            else:
+                seen[key] = val if val < prev else prev
+
+    def _sort_key(item):
+        last = item["last"]
+        # None → stalest → sort first by returning a tuple that sorts before any real ts
+        return (0, "") if last is None else (1, last)
+
+    result = [{"origin": k[0], "destination": k[1], "last": v} for k, v in seen.items()]
+    result.sort(key=_sort_key)
+    return result
+
+
+def stale_routes(limit: int | None = None, c: dict | None = None) -> list[dict]:
+    """讀 cheap_flights,回 [{"origin","destination","last"}] 由最舊 scanned_at 到最新。
+    null/從未掃嘅路線排最前。未配置 Supabase → [] (no-op 安全)。
+    limit: 限制回幾多條(None = 全部)。
+    """
+    c = c or cfg()
+    if not configured(c):
+        return []
+    params = "select=origin,destination,scanned_at&order=scanned_at.asc.nullsfirst"
+    if limit:
+        params += f"&limit={limit * 10}"  # 取多啲,本地 dedupe 之後再截
+    rows = select("cheap_flights", params, c=c)
+    ordered = _order_stale(rows)
+    if limit is not None:
+        ordered = ordered[:limit]
+    return ordered
 
 
 def delete(table: str, params: str, c: dict | None = None, client=None) -> bool:
