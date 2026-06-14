@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 2 完成(彈性行程日數,user approved)。下一步 /gsd-plan-phase 3
-last_updated: "2026-06-14T00:00:00.000Z"
-last_activity: 2026-06-14 -- Phase 2 完成 + verified (彈性行程日數)
+stopped_at: Phase 3 計劃完成(4 plans / 3 waves,plan-checker PASS)。下一步 /gsd-execute-phase 3
+last_updated: "2026-06-14T01:00:00.000Z"
+last_activity: 2026-06-14 -- Phase 3 planned (reliable daily updates)
 progress:
   total_phases: 6
   completed_phases: 2
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-14)
 
 **Core value:** 畀香港用戶一個可信、每日更新嘅地方,快速搵到值得買嘅平機票同真·錯價票,並一撳對返 Google Flights 實時價。
-**Current focus:** Phase 3 — 可靠每日更新(下一步)
+**Current focus:** Phase 3 — 可靠每日更新(已計劃,待執行)
 
 ## Current Position
 
-Phase: 2 (彈性行程日數) — ✅ COMPLETE (user approved 2026-06-14);next: Phase 3
-Plan: 1 of 1 complete
-Status: Phase 2 done — ready to plan Phase 3
-Last activity: 2026-06-14 -- Phase 2 完成 + verified(scanner ±2 refine、可變行程日數、NGO 出 4–8 日)
+Phase: 3 (可靠每日更新) — ✅ PLANNED (4 plans / 3 waves,plan-checker PASS);ready to execute
+Plan: 0 of 4 in current phase
+Status: Ready to execute → /gsd-execute-phase 3(⚠️ Wave 3 = GitHub rollout,要 push + Secrets + 量度封鎖率先開 cron)
+Last activity: 2026-06-14 -- Phase 3 計劃完成(db scanned_at / web freshness / scanner stale-first incremental / scan.yml if:always / GitHub rollout checkpoints)
 
-Progress: [███░░░░░░░] 33% (Phase 1 spike + Phase 2 done / 6)
+Progress: [███░░░░░░░] 33% (Phase 1 spike + Phase 2 done / 6;Phase 3 planned)
 
 ## Performance Metrics
 
