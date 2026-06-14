@@ -669,7 +669,6 @@ def main() -> int:
             ret = depart + dt.timedelta(days=stay)
             r = query_roundtrip(origin, dest, depart, ret, currency, browser)
             tried += 1
-            beyond_before = beyond
             # track beyond separately (on_query 無法 increment beyond)
             if r["status"] == "beyond_data":
                 beyond += 1
