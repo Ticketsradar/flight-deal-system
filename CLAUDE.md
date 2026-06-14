@@ -89,8 +89,15 @@ GitHub Actions cron(每日)
 - `web/lib/{supabase,data,types}.ts`;`web/.env.local`(NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,gitignored)。
 - **本機開發+截圖流程**(Claude Preview MCP 入唔到呢個 project path,用唔到):用 Bash 背景跑 `cd web && npx next dev -p 3000`(`dangerouslyDisableSandbox`),再用 scanner 個 Playwright 寫 script 截圖(`uv run python /tmp/shot.py`)。`next build` 過先算數。
 
+### ⚡ 掃描速度優化(D-OPT-01..06)✅ 2026-06-14 已實作 + 測試(commit `6a2a727`)
+- **D-OPT-01/02/03 route 層並行**:`scanner.py` 加 `--workers`(預設 2)→ `ThreadPoolExecutor` 喺 route 層 2 條同時掃。每 worker 各自一個 `ThreadLocalBrowsers`(Playwright sync API 非 thread-safe);一個 `Lock` 包住所有共享狀態(scan/stats/pace/guard/rec_index + atomic save snapshot);delay/cool_down/rest 全部喺 lock 外瞓,worker 唔互相阻。
+- **D-OPT-04/05 delay 收細**:`routes.yaml` `delay_seconds [3,8]→[2,5]`;browser fallback 內部 delay `8-15s→4-8s`、`4-8s→2-4s`(`scanner.py` query_roundtrip)。
+- **測試**:`test_scanner.py` 加咗 test 10-13(ThreadLocalBrowsers 隔離 / apply_query_stats 4000 並發更新冇甩數 / run_routes_parallel 真並行),**23/23 綠**;本機 smoke `--workers 2` 證實 route 交錯跑、stats 一致、冇 deadlock。
+- **預期**:並行 ~2x × delay ~1.3x ≈ **~2.5x**(疊喺已有 ~6x browser resource-block 之上)。
+- **⚠️ 雲端代價(未量度)**:`scan.yml` 加咗 `--workers 2` → **同一 shard IP 對 Google 嘅 request rate 約翻倍 + delay 收細**,封鎖率可能升。cron 仲未生效;**merge 後建議先手動 dispatch 一次量度 block rate**,確認再信 daily。若 block 嚴重 → scan 步驟改返 `--workers 1`(本機照用 2)。
+
 ### 後端 Phase 4(`.github/workflows/scan.yml`)✅ 已上線
-- **Daily 全量**(`scan.yml`):**20-shard matrix,每日掃晒全部 171 條**,`scanner.py --slice K/20 --grid --grid-step 3 --stale-first`(refine ON、browser 後備 ON、**冇 --budget = 全覆蓋**)+ `upload.py`(獨立 step,`if: always()`)。cron `0 18 * * *`。每片 ~9 route × ~117 query,實測 ~11s/query → ~3.2 鐘/片,遠離 6 鐘 job 上限。`playwright install --with-deps chromium` step 裝 browser binary。
+- **Daily 全量**(`scan.yml`):**20-shard matrix,每日掃晒全部 171 條**,`scanner.py --slice K/20 --grid --grid-step 3 --stale-first --workers 2`(refine ON、browser 後備 ON、**冇 --budget = 全覆蓋**、**2 worker 並行**)+ `upload.py`(獨立 step,`if: always()`)。cron `0 18 * * *`。每片 ~9 route × ~117 query;原 ~3.2 鐘/片,workers=2 後預期 ~1.6 鐘/片,遠離 6 鐘 job 上限。`playwright install --with-deps chromium` step 裝 browser binary。
 - **用量**:~20k query/日 ≈ ~80 機鐘/日。user 揀咗全量每日(已知接近 fair-use 線)。原 `scan-weekly.yml` 因 daily 已全覆蓋而**刪走**(唔好疊重複 load)。
 - **✅ 封鎖未知數已解**:GitHub 共用 Azure IP **純 HTTP 會畀 Google 軟封鎖**(空殼頁,實測 6 片 5 紅、只收 5 route)。**解法 = Playwright browser 後備**(行 JS 繞到,log 標 🌐,job 變綠)。因 browser 慢、private repo 2000 分鐘/月唔夠,**repo 改咗 public** 攞免費無限 Actions。
 - ⚠️ 殘留風險 + 監察:① 個別 shard 撞「IP 信譽級」死封 → 該片紅(`fail-fast:false`+`if:always` 兜住,唔影響其他片同出街);② GitHub fair-use:若收到警告 email / 經常一堆紅,就調返「每 2–3 日轉一圈」(減 shard + 加返 `--budget`)。

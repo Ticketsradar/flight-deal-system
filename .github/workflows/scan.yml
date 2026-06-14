@@ -3,6 +3,10 @@
 # public repo Actions 免費無限 → 每日掃晒全部 171 條 route(grid-step 3 + refine)。
 # 20 shard 並行,每 shard ~9 route × ~117 query ≈ ~1050 query;實測 ~11s/query
 #   → 每片 ~3.2 鐘跑完(遠離 GitHub 單 job 6 鐘上限,留好多緩衝畀封鎖慢嗰日)。
+# --workers 2(D-OPT-01):每片再開 2 條 thread 同時掃 → 預期每片再快 ~2x(~1.6 鐘)。
+#   ⚠️ 代價:同一 shard IP 對 Google 嘅 request rate 約翻倍 + delay 收細,封鎖率可能升。
+#   cron 未正式生效;merge 後建議先手動 dispatch 一次量度 block rate,確認再信 daily。
+#   若 block 變嚴重 → scan 步驟改返 --workers 1(本機照用 2)。
 # --stale-first:萬一某片超時,最舊嗰啲已優先掃好,最後跳過嘅係最新鮮嗰啲。
 #
 # 雙層抓價:HTTP fast-flights(快)→ 撞到 Google 空殼頁軟封鎖就自動轉
@@ -60,7 +64,8 @@ jobs:
             --slice ${{ matrix.k }}/20 \
             --grid \
             --grid-step 3 \
-            --stale-first
+            --stale-first \
+            --workers 2
 
       # DAILY-03:scan 超時/失敗都要跑 upload,確保部分結果出街
       - name: 上傳已完成部分(即使掃描失敗)
