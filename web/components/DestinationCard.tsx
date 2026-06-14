@@ -22,6 +22,7 @@ const TIERS = [
   { text: "#94a3b8", bg: "rgba(255,255,255,0.05)", bd: "rgba(255,255,255,0.12)" },
 ];
 function priceTier(price: number, monthMin: number): number {
+  if (!isFinite(monthMin) || monthMin <= 0) return 3;
   if (price <= monthMin * 1.04) return 0;
   if (price <= monthMin * 1.12) return 1;
   if (price <= monthMin * 1.22) return 2;
@@ -130,9 +131,9 @@ export default function DestinationCard({
                 <div className="text-xs opacity-70 w-9 shrink-0 pt-2">{monthLabel(month)}</div>
                 <div className="flex flex-wrap gap-1.5">
                   {sorted
-                    .filter((p) => priceTier(p.price ?? Infinity, mMin) < 3)
+                    .filter((p) => p.price != null && priceTier(p.price, mMin) < 3)
                     .map((p, i) => {
-                      const c = TIERS[priceTier(p.price ?? Infinity, mMin)];
+                      const c = TIERS[priceTier(p.price!, mMin)];
                     return (
                       <a
                         key={i}

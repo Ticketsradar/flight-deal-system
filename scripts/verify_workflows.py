@@ -5,11 +5,11 @@ scripts/verify_workflows.py — 驗證 scan.yml + scan-weekly.yml 結構正確
 全 pass → exit 0;任一 fail → exit 1 + stderr 描述
 
 Checks:
-  1. 兩個 workflow YAML 都能 yaml.safe_load(格式合法)
-  2. 每個 workflow 都有 concurrency guard(防 cron-delay double-fire,DAILY-03)
-  3. 每個 workflow 都有 if: always() upload step(獨立於 scan step,DAILY-03)
-  4. scan.yml(daily)cron 係 comment 咗(唔係 active schedule),只有 workflow_dispatch
-  5. scan-weekly.yml 有 active Sunday cron(0 2 * * 0)
+  1. scan.yml YAML 格式合法(scan-weekly.yml 已刪走,跳過)
+  2. 每個存在嘅 workflow 都有 concurrency guard(防 cron-delay double-fire,DAILY-03)
+  3. 每個存在嘅 workflow 都有 if: always() upload step(獨立於 scan step,DAILY-03)
+  4. scan.yml(daily)有 active cron schedule(Phase 4 已 uncomment)
+  5. scan-weekly.yml 若存在則有 active Sunday cron(0 2 * * 0)
 """
 from __future__ import annotations
 
@@ -107,18 +107,15 @@ def check_scan_step_separate(doc: dict, label: str) -> None:
         ok(f"{label}: scanner.py 同 upload.py 係獨立 step")
 
 
-def check_daily_cron_commented(raw: str, label: str) -> None:
-    """daily scan.yml 唔應有 active schedule/cron(應被 comment)。"""
-    # YAML 中 active schedule → 頂層 on.schedule 必須有 cron 行
-    # 如果 cron 喺 comment 行裏就唔會被 yaml.safe_load 解析出 schedule
+def check_daily_cron_active(raw: str, label: str) -> None:
+    """Daily scan.yml 必須有 active schedule/cron(Phase 4 production 狀態)。"""
     doc_check = yaml.safe_load(raw)
     on_block = get_on(doc_check)
     has_active_schedule = "schedule" in on_block
     if has_active_schedule:
-        fail(f"{label}: 有 active schedule/cron — 應 comment 咗"
-             "(03-04 量度 block rate 之後先 uncomment)")
+        ok(f"{label}: has active cron schedule (production state)")
     else:
-        ok(f"{label}: cron 係 comment 咗,唔係 active schedule")
+        fail(f"{label}: 缺少 active cron schedule — daily scan 唔會自動跑")
 
 
 def check_weekly_cron_active(doc: dict, label: str) -> None:
@@ -137,12 +134,17 @@ print("=== verify_workflows.py ===")
 
 # 1. Parse
 daily_doc = load_yaml(DAILY)
-weekly_doc = load_yaml(WEEKLY)
 
 if daily_doc:
     ok(f"scan.yml: yaml.safe_load 成功")
-if weekly_doc:
-    ok(f"scan-weekly.yml: yaml.safe_load 成功")
+
+if not WEEKLY.exists():
+    ok("scan-weekly.yml: 已刪走(daily 全量已取代,唔需要)")
+    weekly_doc = None
+else:
+    weekly_doc = load_yaml(WEEKLY)
+    if weekly_doc:
+        ok(f"scan-weekly.yml: yaml.safe_load 成功")
 
 # 2. Concurrency guard
 if daily_doc:
@@ -162,10 +164,10 @@ if daily_doc:
 if weekly_doc:
     check_scan_step_separate(weekly_doc, "scan-weekly.yml")
 
-# 5. Daily cron commented out
-check_daily_cron_commented(DAILY.read_text(encoding="utf-8"), "scan.yml")
+# 5. Daily cron active (Phase 4 production state)
+check_daily_cron_active(DAILY.read_text(encoding="utf-8"), "scan.yml")
 
-# 6. Weekly cron active
+# 6. Weekly cron active (only if file exists)
 if weekly_doc:
     check_weekly_cron_active(weekly_doc, "scan-weekly.yml")
 

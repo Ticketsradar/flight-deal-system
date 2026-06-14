@@ -14,12 +14,18 @@ Tests:
   7. reorder_stale:從未掃排前,然後按 stale_keys 升序
   8. budget_reached:q_done >= budget → True;budget falsy → False
   9. grid-step:--grid-step 3 → sample_days 每 3 日一個
+ 10. ThreadLocalBrowsers 停用 → 回 None(D-OPT-02)
+ 11. ThreadLocalBrowsers 每 thread 各自一個 browser + close_all 清晒(D-OPT-02)
+ 12. apply_query_stats 並發更新唔甩數(Lock 保護共享狀態,D-OPT-03)
+ 13. run_routes_parallel 跑晒全部 route + 真係多 thread 並行(D-OPT-01)
 """
 from __future__ import annotations
 
 import datetime as dt
 import sys
+import threading
 from scanner import refine_period_lengths, MIN_NIGHTS, MAX_NIGHTS, deep_link, reorder_stale, budget_reached
+from scanner import ThreadLocalBrowsers, apply_query_stats, run_routes_parallel
 
 PASS_COUNT = 0
 FAIL_COUNT = 0
@@ -415,6 +421,169 @@ def test_9_grid_step():
 
 
 # ─────────────────────────────────────────────────────────────────
+# Helpers for threading tests
+# ─────────────────────────────────────────────────────────────────
+class FakeBrowser:
+    """假 BrowserFetcher:只記錄有冇 close 過(免真開 Playwright)。"""
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
+# ─────────────────────────────────────────────────────────────────
+# Test 10 — ThreadLocalBrowsers 停用 → 回 None,close_all 唔爆(D-OPT-02)
+# ─────────────────────────────────────────────────────────────────
+def test_10_threadlocal_browsers_disabled():
+    tlb = ThreadLocalBrowsers(enabled=False, factory=FakeBrowser)
+    got = tlb.get()
+    if got is not None:
+        fail("test_10_threadlocal_browsers_disabled", f"停用時應回 None,得到 {got!r}")
+        return
+    # 重複 get 仍然 None,close_all 回 0(冇開過)
+    if tlb.get() is not None or tlb.close_all() != 0:
+        fail("test_10_threadlocal_browsers_disabled", "停用時唔應該開到 browser")
+    else:
+        ok("test_10_threadlocal_browsers_disabled (停用 → None)")
+
+
+# ─────────────────────────────────────────────────────────────────
+# Test 11 — 每 thread 各自一個 browser,同 thread 重用,close_all 清晒(D-OPT-02)
+# ─────────────────────────────────────────────────────────────────
+def test_11_threadlocal_browsers_isolation():
+    created: list = []
+    clock = threading.Lock()
+
+    def factory():
+        b = FakeBrowser()
+        with clock:
+            created.append(b)
+        return b
+
+    tlb = ThreadLocalBrowsers(enabled=True, factory=factory)
+
+    # 同一條 thread 連續 get → 同一個 instance(只開一次)
+    a1 = tlb.get()
+    a2 = tlb.get()
+    same_thread_reuse = a1 is a2 and a1 is not None
+
+    # 兩條 worker thread → 各自唔同 instance
+    seen: dict = {}
+
+    def worker(name: str):
+        seen[name] = tlb.get()
+
+    t1 = threading.Thread(target=worker, args=("t1",))
+    t2 = threading.Thread(target=worker, args=("t2",))
+    t1.start(); t2.start(); t1.join(); t2.join()
+    cross_thread_distinct = (
+        seen["t1"] is not None and seen["t2"] is not None
+        and seen["t1"] is not seen["t2"]
+        and seen["t1"] is not a1 and seen["t2"] is not a1
+    )
+
+    # main + t1 + t2 = 3 個 browser 開過;close_all 全部關
+    closed_n = tlb.close_all()
+    all_closed = len(created) == 3 and all(b.closed for b in created) and closed_n == 3
+
+    if same_thread_reuse and cross_thread_distinct and all_closed:
+        ok("test_11_threadlocal_browsers_isolation (per-thread 隔離 + close_all 清晒)")
+    else:
+        fail("test_11_threadlocal_browsers_isolation",
+             f"same_thread_reuse={same_thread_reuse} "
+             f"cross_thread_distinct={cross_thread_distinct} "
+             f"all_closed={all_closed} (created={len(created)}, closed_n={closed_n})")
+
+
+# ─────────────────────────────────────────────────────────────────
+# Test 12 — apply_query_stats:並發更新唔甩數 + 狀態路由正確(D-OPT-03)
+# ─────────────────────────────────────────────────────────────────
+def test_12_apply_query_stats_concurrent():
+    def fresh_stats() -> dict:
+        return {"queries": 0, "ok": 0, "no_flights": 0, "failed": 0,
+                "beyond_data": 0, "tier2_used": 0, "tier2_saved": 0}
+
+    # (a) 狀態路由 + guard:單線程驗算
+    stats = fresh_stats(); guard = {"consec": 0}; pace = {"q": 0}
+    lock = threading.Lock()
+    apply_query_stats(stats, guard, pace, {"status": "ok"}, lock)
+    apply_query_stats(stats, guard, pace, {"status": "failed", "error": "x"}, lock)
+    consec_after_fail = guard["consec"]
+    apply_query_stats(stats, guard, pace, {"status": "ok", "via": "browser"}, lock)
+    routing_ok = (
+        stats["ok"] == 2 and stats["failed"] == 1
+        and stats["tier2_used"] == 1 and stats["tier2_saved"] == 1
+        and consec_after_fail == 1 and guard["consec"] == 0  # ok 之後重置
+        and pace["q"] == 3 and stats["queries"] == 3
+    )
+
+    # (b) 並發:8 threads × 500 = 4000 次 ok,唔可以甩 count
+    stats2 = fresh_stats(); guard2 = {"consec": 0}; pace2 = {"q": 0}
+    lock2 = threading.Lock()
+    n_threads, per = 8, 500
+    total = n_threads * per
+
+    def hammer():
+        for _ in range(per):
+            apply_query_stats(stats2, guard2, pace2, {"status": "ok"}, lock2)
+
+    threads = [threading.Thread(target=hammer) for _ in range(n_threads)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    concurrent_ok = (stats2["queries"] == total and stats2["ok"] == total
+                     and pace2["q"] == total)
+
+    if routing_ok and concurrent_ok:
+        ok(f"test_12_apply_query_stats_concurrent (routing + {total} 並發更新冇甩數)")
+    else:
+        fail("test_12_apply_query_stats_concurrent",
+             f"routing_ok={routing_ok} concurrent_ok={concurrent_ok} "
+             f"(queries={stats2['queries']}/{total}, ok={stats2['ok']}, pace={pace2['q']})")
+
+
+# ─────────────────────────────────────────────────────────────────
+# Test 13 — run_routes_parallel:跑晒全部 + 真係多 thread 並行(D-OPT-01)
+# ─────────────────────────────────────────────────────────────────
+def test_13_run_routes_parallel():
+    # (a) workers=1:5 條 route 全部跑到
+    routes = [{"id": i} for i in range(5)]
+
+    def p_one(i, route):
+        return (i, route["id"])
+
+    res1 = run_routes_parallel(routes, p_one, workers=1)
+    all_processed = len(res1) == 5 and sorted(x[1] for x in res1) == list(range(5))
+
+    # (b) workers=2:用 Barrier 證實至少 2 條 route 同時喺度跑
+    barrier = threading.Barrier(2, timeout=5)
+    seen_threads: set = set()
+    slock = threading.Lock()
+
+    def p_concurrent(i, route):
+        try:
+            barrier.wait()  # 要夠 2 條一齊到先放行;sequential 就會 timeout
+        except threading.BrokenBarrierError:
+            return ("broken", route["id"])
+        with slock:
+            seen_threads.add(threading.get_ident())
+        return ("ok", route["id"])
+
+    res2 = run_routes_parallel([{"id": i} for i in range(4)], p_concurrent, workers=2)
+    concurrent_ok = (len(res2) == 4 and all(x[0] == "ok" for x in res2)
+                     and len(seen_threads) >= 2)
+
+    if all_processed and concurrent_ok:
+        ok("test_13_run_routes_parallel (workers=1 跑晒 + workers=2 真並行)")
+    else:
+        fail("test_13_run_routes_parallel",
+             f"all_processed={all_processed} concurrent_ok={concurrent_ok} "
+             f"(threads={len(seen_threads)})")
+
+
+# ─────────────────────────────────────────────────────────────────
 # Run all tests
 # ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
@@ -428,6 +597,10 @@ if __name__ == "__main__":
     test_7_reorder_stale()
     test_8_budget_reached()
     test_9_grid_step()
+    test_10_threadlocal_browsers_disabled()
+    test_11_threadlocal_browsers_isolation()
+    test_12_apply_query_stats_concurrent()
+    test_13_run_routes_parallel()
     print()
     print(f"Results: {PASS_COUNT} passed, {FAIL_COUNT} failed")
     sys.exit(0 if FAIL_COUNT == 0 else 1)

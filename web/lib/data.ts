@@ -25,10 +25,15 @@ export async function getCheapFlights(filters: Filters = {}): Promise<CheapFligh
   if (filters.region) q = q.eq("region", filters.region);
   if (filters.month) q = q.eq("month", filters.month);
   if (filters.maxPrice) q = q.lte("price_hkd", filters.maxPrice);
-  const { data, error } = await q.order("price_hkd", { ascending: true });
+  const { data, error } = await q
+    .order("price_hkd", { ascending: true })
+    .limit(2000); // explicit limit; adjust as routes grow (Supabase default is 1000)
   if (error) {
     console.error("[data] cheap_flights:", error.message);
     return [];
+  }
+  if ((data?.length ?? 0) >= 1900) {
+    console.warn("[data] cheap_flights result near row limit — consider pagination");
   }
   return data ?? [];
 }
