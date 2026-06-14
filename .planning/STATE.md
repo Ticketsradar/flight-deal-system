@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 3 Plan 03 完成 — scanner incremental flags + CI workflow restructure。下一步 03-04(GitHub rollout checkpoint)"
-last_updated: "2026-06-14T04:30:00.000Z"
-last_activity: "2026-06-14 -- Phase 3 Plan 03 完成:scanner --stale-first/--budget/--grid-step + scan.yml if:always/concurrency + scan-weekly.yml"
+stopped_at: "Phase 3 完成(03-04 rollout 落地)— repo 改 public(免費無限 Actions)+ 雲端 daily/weekly cron 連 Playwright browser 後備已上線。下一步:merge 待 user、Vercel deploy、或 Phase 4"
+last_updated: "2026-06-14T07:30:00.000Z"
+last_activity: "2026-06-14 -- 03-04 rollout:量度純 HTTP 雲端 5/6 shard 畀 Google 軟封鎖→開 browser 後備證實繞到(🌐 綠 job)→repo 改 public→scan.yml(daily 8 shard cron 18:00)+scan-weekly(16 shard cron 週日)上線"
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 3
   total_plans: 5
-  completed_plans: 3
-  percent: 20
+  completed_plans: 4
+  percent: 50
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-06-14)
 
 ## Current Position
 
-Phase: 3 (可靠每日更新) — Wave 1+2 本機 code ✅(3/4 plans);Wave 3 = 03-04 GitHub rollout 待 user
-Plan: 3 of 4 done (03-01/02/03 ✅);next 03-04(autonomous:false — push + Secrets + 量度封鎖率)
-Status: ⏸ 停喺 Wave 3 — 要 user push 上 GitHub + set Secrets + 手動 dispatch 量度 Google 封鎖率,夠穩先開 cron
-Last activity: 2026-06-14 -- Phase 3 Wave 1+2 完成(db scanned_at、web freshness、scanner stale-first、scan.yml/scan-weekly if:always;兩個 cron 都 commented 住等量度)
+Phase: 3 (可靠每日更新) — ✅ 完成(4/4 plans,含 03-04 rollout 落地)
+Plan: 4 of 4 done (03-01/02/03/04 ✅)
+Status: ✅ Phase 3 完成。雲端 daily(8 shard,cron 18:00 UTC)+ weekly(16 shard,cron 週日 02:00 UTC)連 browser 後備已上線並 push 上 phase-3-website。**待 user merge PR → cron 正式生效**
+Last activity: 2026-06-14 -- 03-04 rollout 量度+落地(見 frontmatter last_activity)
 
-Progress: [████░░░░░░] ~42% (Phase 1 + Phase 2 + Phase 3 code done;Phase 3 GitHub rollout pending)
+Progress: [█████░░░░░] ~50% (Phase 1/2/3 完成;Phase 4 自家錯價偵測未做;Vercel deploy 另一條 go-live 線)
 
 ## Performance Metrics
 
@@ -65,7 +65,8 @@ Recent decisions affecting current work:
 - [Milestone]: Reserve 返 user 原計劃嘅小紅書(Phase 5)/ FB·IG(Phase 6)社交 scout 做 committed scope,reuse 同一條 scout → master plumbing
 - [Research]: CLAUDE.md 舊「硬牆(43 萬 query)」假設係錯 — 參考網站只係 dur±2 window,fast-flights 加薄 ±N 內層幾千 query 就得
 - [Phase 3 Plan 03]: budget_reached() 喺每條 route 完成後先檢查,唔係 mid-route,確保 per-route 原子寫入唔被打斷
-- [Phase 3 Plan 03]: daily cron 喺 scan.yml 係 comment 咗 — 等 03-04 量度真實 Google block rate 先 uncomment
+- [Phase 3 Plan 03→04]: daily cron 一度 comment 住等量度;**03-04 量度後已 uncomment 上線**
+- [Phase 3 Plan 04 ✅]: **雲端純 HTTP 畀 Google 軟封鎖**(GitHub 共用 Azure IP;5/6 shard 紅、只收 5 route)→ **開 Playwright browser 後備繞到**(行 JS 避空殼頁,🌐 標記,job 綠)→ **repo 改 public 攞免費無限 Actions** 養活 browser 慢成本 → daily 8 shard(cron 18:00 UTC)+ weekly 16 shard(cron 週日 02:00)上線
 
 ### Pending Todos
 
@@ -78,8 +79,9 @@ None yet.
 [Issues that affect future work]
 
 - [Phase 1 ✅ resolved]: spike 證實 Travelpayouts 來回數據太疏 → FALLBACK;Phase 2/3 行 fast-flights 自掃路徑(month-matrix 單程數據可留作可選 anchor 優化)
-- [Known bug]: `db.cheap_flight_rows()` 冇寫 `scanned_at` → UPDATE 唔更新時間戳(Phase 3 修)
-- [Known bug ✅ Phase 3 Plan 03 修]: `scan.yml` 一步兩 command → 改成獨立 step + if: always()
+- [Known bug ✅ Phase 3 修]: `db.cheap_flight_rows()` 冇寫 `scanned_at` → 已加,UPDATE 真正推進時間戳
+- [Known bug ✅ Phase 3 Plan 03 修]: `scan.yml` 一步兩 command → 改成獨立 step + if: always()(03-04 雲端實證:5/6 紅都照 upload)
+- [⚠️ 監察]: 雲端 browser 後備慘成本高,但 public repo Actions 免費無限;仍要留意個別 shard 撞「IP 信譽級」死封(browser 都過唔到)會變紅 — fail-fast:false + if:always 保證唔影響其他 shard 同出街
 - [Phase 4]: 異常偵測有 cold-start caveat,需約 1 星期歷史先準;由 dated `scan_*.json` backfill bootstrap
 - [Phase 5]: 小紅書 scout 需 MediaCrawler + cookie/session 登入(session 檔 gitignored),反爬高,慢 cadence
 - [Phase 6]: FB/IG 反爬/ToS friction 最高,用 Apify 或半人手;照原計劃排最後
@@ -90,7 +92,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| Go-live | merge `phase-3-website` → main、push、Vercel deploy、GitHub Secrets(見 CLAUDE.md) | Pending | 2026-06-14 |
+| Go-live | ✅ push + GitHub Secrets + repo public + cron 上線(03-04);**淨返 user merge PR + Vercel deploy**(見 CLAUDE.md) | 部分完成 | 2026-06-14 |
 | Sources (v2) | SRC-01 feeds.py Playwright fallback(Secret Flying / FlyerTalk)、SRC-02 商務艙錯價 | Deferred | 2026-06-14 |
 | Grid (v2) | GRID-01 付費 API 做真·完整 2–14 grid | Deferred | 2026-06-14 |
 
