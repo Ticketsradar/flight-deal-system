@@ -523,7 +523,14 @@ def main() -> int:
         want = args.only.strip().upper()
         routes = [r for r in routes if f"{r['origin']}-{r['dest']}" == want]
     if args.slice:
-        k, n = (int(x) for x in args.slice.split("/"))
+        parts = args.slice.split("/")
+        if len(parts) != 2:
+            ap.error(f"--slice 格式應係 K/N(如 2/20),得到: {args.slice!r}")
+        k, n = int(parts[0]), int(parts[1])
+        if n <= 0:
+            ap.error(f"--slice N 必須 > 0,得到: {n}")
+        if k >= n:
+            ap.error(f"--slice K 必須 < N(K={k}, N={n})")
         routes = routes[k::n]  # 平均分:slice 0/12 = routes[0,12,24,...]
 
     if args.stale_first:
