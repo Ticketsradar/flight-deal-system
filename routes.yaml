@@ -7,7 +7,7 @@
 
 defaults:
   samples_per_month: 2      # 每月抽幾多個出發日做樣本(1–4;愈多愈準但 query 愈多)
-  delay_seconds: [3, 8]     # 每個 query 之間隨機等幾耐(秒)— 鐵律:咪轟炸 Google
+  delay_seconds: [2, 5]     # 每個 query 之間隨機等幾耐(秒)— 鐵律:咪轟炸 Google(D-OPT-04:由 [3,8] 收細)
   currency: HKD
 
 origins:

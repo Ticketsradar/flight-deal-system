@@ -44,8 +44,10 @@ import re
 import shutil
 import sys
 import tempfile
+import threading
 import time
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import yaml
@@ -234,6 +236,97 @@ class BrowserFetcher:
                 pass
 
 
+# ------------------------------------------------------------ 並行掃描基建(D-OPT-01/02/03)
+
+class ThreadLocalBrowsers:
+    """每條 worker thread 各自持有一個 BrowserFetcher。
+
+    Playwright 嘅 sync API 唔係 cross-thread 安全(D-OPT-02),所以 route 層並行時
+    每條 thread 要用自己嗰個 browser,唔可以共享。用 threading.local() 做 per-thread
+    存儲;另開一個 registry list(lock 保護)記住所有開過嘅 browser,收工時 close_all()
+    一次過清晒(ThreadPoolExecutor 重用 thread,冇得逐條 enumerate)。
+
+    factory 預設係 BrowserFetcher;測試可注入假 factory 免真開 Playwright。
+    enabled=False(--no-browser)時 get() 永遠回 None。
+    """
+
+    def __init__(self, enabled: bool, factory=None) -> None:
+        self.enabled = enabled
+        self._factory = factory or BrowserFetcher
+        self._local = threading.local()
+        self._registry: list = []
+        self._reg_lock = threading.Lock()
+
+    def get(self):
+        if not self.enabled:
+            return None
+        b = getattr(self._local, "browser", None)
+        if b is None:
+            b = self._factory()
+            self._local.browser = b
+            with self._reg_lock:
+                self._registry.append(b)
+        return b
+
+    def close_all(self) -> int:
+        """關晒所有開過嘅 browser,回成功關咗幾多個。"""
+        with self._reg_lock:
+            regs = list(self._registry)
+        closed = 0
+        for b in regs:
+            try:
+                b.close()
+                closed += 1
+            except Exception:
+                pass
+        return closed
+
+
+def apply_query_stats(stats: dict, guard: dict, pace: dict, r: dict, lock) -> int:
+    """把一個 query 結果原子性地記入共享 stats/guard/pace(D-OPT-03)。
+
+    所有對共享 dict 嘅更新都喺 lock 內進行,route 層並行時先唔會甩 count。
+    回更新後嘅 guard['consec'](連環失敗計數),畀 caller 決定使唔使唞長覺。
+    純狀態轉移 — 唔做任何 sleep(delay/cool_down 要喺 lock 外做)。
+    """
+    with lock:
+        pace["q"] += 1
+        stats["queries"] += 1
+        if r.get("via") == "browser":
+            stats["tier2_used"] += 1
+        st = r.get("status")
+        if st == "ok":
+            stats["ok"] += 1
+            guard["consec"] = 0
+            if r.get("via") == "browser":
+                stats["tier2_saved"] += 1
+        elif st == "no_flights":
+            stats["no_flights"] += 1
+            guard["consec"] = 0
+        elif st == "beyond_data":
+            stats["beyond_data"] += 1
+            guard["consec"] = 0
+        else:
+            stats["failed"] += 1
+            guard["consec"] += 1
+        return guard["consec"]
+
+
+def run_routes_parallel(routes: list, process_one, workers: int) -> list:
+    """用 ThreadPoolExecutor 喺 route 層並行(D-OPT-01)。
+
+    每條 route 交畀 process_one(i, route)(1-based index)。workers=1 等同順序跑。
+    回各 process_one 嘅結果 list(submit 次序);process_one 內部自己處理 stop/abort,
+    唔好喺度 raise(thread pool 入面 raise 會難收拾)。
+    """
+    out: list = []
+    with ThreadPoolExecutor(max_workers=max(1, int(workers))) as ex:
+        futs = [ex.submit(process_one, i, r) for i, r in enumerate(routes, 1)]
+        for f in futs:
+            out.append(f.result())
+    return out
+
+
 # ------------------------------------------------------------ 查價(合體)
 
 def parse_price(raw: str):
@@ -286,11 +379,11 @@ def query_roundtrip(origin: str, dest: str, depart: dt.date, ret: dt.date,
             break  # 1 個空殼頁就升級真瀏覽器:retry HTTP 多數冇用,browser 已優化到快
         except Blocked as e:
             last_err = str(e)
-            time.sleep(random.uniform(8, 15))
+            time.sleep(random.uniform(4, 8))  # D-OPT-05:由 8-15s 縮短
             break  # 被擋就唔好再嘥 HTTP,直接升級
         except Exception as e:
             last_err = type(e).__name__
-            time.sleep(random.uniform(4, 8))
+            time.sleep(random.uniform(2, 4))  # D-OPT-05:由 4-8s 縮短
 
     if browser is not None:
         url = GF_URL + "?" + urllib.parse.urlencode(gf_params(tfs, currency))
@@ -504,6 +597,8 @@ def main() -> int:
                     help="每次跑最多發多少 queries(0 = 無上限;每完成一條 route 後檢查)")
     ap.add_argument("--grid-step", type=int, default=1,
                     help="--grid 模式下每隔幾日抽一個樣本(1=每日,3=每3日;daily coarse 用)")
+    ap.add_argument("--workers", type=int, default=2,
+                    help="route 層並行數(預設 2;1 = 順序跑)。每條 worker 各自一個 browser(D-OPT-01)")
     args = ap.parse_args()
 
     cfg = yaml.safe_load((ROOT / "routes.yaml").read_text(encoding="utf-8"))
@@ -565,12 +660,16 @@ def main() -> int:
         except Exception as e:
             log(f"[scan] resume 讀檔失敗({type(e).__name__})— 由頭掃過")
 
+    workers = max(1, args.workers)
     total_q = len(routes) * len(months) * len(sample_days)
-    est_min = total_q * (((delay_lo + delay_hi) / 2) + 3) / 60
+    est_min = total_q * (((delay_lo + delay_hi) / 2) + 3) / 60 / workers
     log(f"[scan] {len(routes)} 條 route × {len(months)} 個月 × 每月 {len(sample_days)} 個取樣日"
-        f" ≈ {total_q} queries,淨 HTTP 預計 ~{est_min:.0f} 分鐘(瀏覽器後備另計)")
+        f" ≈ {total_q} queries,{workers} 條 worker 並行,淨 HTTP 預計 ~{est_min:.0f} 分鐘(瀏覽器後備另計)")
 
-    browser = None if args.no_browser else BrowserFetcher()
+    # 每條 worker thread 各自一個 browser(Playwright 非 thread-safe,D-OPT-02)
+    browsers = ThreadLocalBrowsers(enabled=not args.no_browser)
+    lock = threading.Lock()          # 保護所有共享狀態(scan/stats/pace/guard/rec_index,D-OPT-03)
+    stop_event = threading.Event()   # budget 到 / abort / 爆碟 → 唔再開新 route
 
     scan = {
         "scan_date": today.isoformat(),
@@ -600,66 +699,60 @@ def main() -> int:
     t0 = time.time()
 
     def save(status: str) -> None:
-        scan["status"] = status
-        scan["stats"]["elapsed_s"] = round(time.time() - t0)
-        ms = [mr for rt in scan["routes"] for mr in rt["months"]]
-        scan["stats"]["months_ok"] = sum(1 for x in ms if x["status"] == "ok")
-        scan["stats"]["months_failed"] = sum(1 for x in ms if x["status"] == "failed")
-        scan["stats"]["months_beyond"] = sum(1 for x in ms if x["status"] == "beyond_data")
+        # 喺 lock 內砌好 snapshot 再 serialize,並行時先唔會 serialize 到一半畀人改爛
+        with lock:
+            scan["status"] = status
+            scan["stats"]["elapsed_s"] = round(time.time() - t0)
+            ms = [mr for rt in scan["routes"] for mr in rt["months"]]
+            scan["stats"]["months_ok"] = sum(1 for x in ms if x["status"] == "ok")
+            scan["stats"]["months_failed"] = sum(1 for x in ms if x["status"] == "failed")
+            scan["stats"]["months_beyond"] = sum(1 for x in ms if x["status"] == "beyond_data")
+            payload = json.dumps(scan, ensure_ascii=False, indent=1)
         tmp_path = out_path.with_suffix(".json.tmp")
-        tmp_path.write_text(json.dumps(scan, ensure_ascii=False, indent=1), encoding="utf-8")
+        tmp_path.write_text(payload, encoding="utf-8")  # 寫檔喺 lock 外做
         tmp_path.replace(out_path)  # 原子替換 — 寫到一半爆碟都唔會整爛舊檔
 
     def cool_down() -> None:
-        if pace["q"] and pace["q"] % COOL_EVERY == 0:
+        with lock:
+            q = pace["q"]
+            due = bool(q) and q % COOL_EVERY == 0
+        if due:
             zzz = random.uniform(20, 40)
             log(f"[scan] …唞 {zzz:.0f} 秒(每 {COOL_EVERY} 個 query 抖一抖)")
-            time.sleep(zzz)
+            time.sleep(zzz)  # sleep 喺 lock 外,唔阻其他 worker
 
     def rest_or_abort() -> None:
         """連環真失敗:唞長覺(最多 3 次),唞完唔掂先至收工。"""
-        if guard["rests"] >= MAX_LONG_RESTS:
-            raise AbortScan()
-        guard["rests"] += 1
+        with lock:
+            if guard["rests"] >= MAX_LONG_RESTS:
+                raise AbortScan()
+            guard["rests"] += 1
+            n = guard["rests"]
         zzz = random.uniform(600, 900)
         log(f"[scan] ⚠ 連續 {ABORT_AFTER} 個 query 失敗 — 自動唞 {zzz/60:.0f} 分鐘等 Google 消氣"
-            f"(第 {guard['rests']}/{MAX_LONG_RESTS} 次)")
-        time.sleep(zzz)
-        guard["consec"] = 0
+            f"(第 {n}/{MAX_LONG_RESTS} 次)")
+        time.sleep(zzz)  # sleep 喺 lock 外
+        with lock:
+            guard["consec"] = 0
 
-    def scan_month(origin: str, dest: str, stay: int, y: int, m: int) -> dict:
+    def scan_month(origin: str, dest: str, stay: int, y: int, m: int, browser) -> dict:
         mlabel = f"{y}-{m:02d}"
         oks: list = []
         tried = failed = beyond = 0
         last_err = ""
 
         # on_query callback:每個 query 後統一更新 pace/stats/guard/delay/cool_down
-        # (grid pass 同 refine pass 共用,鐵律 4)
+        # (grid pass 同 refine pass 共用,鐵律 4)。共享狀態經 apply_query_stats 喺 lock 內更新;
+        # failed/last_err 係本月本 thread 嘅 local(thread-confined,唔使 lock)。
         def on_query(r: dict) -> None:
             nonlocal failed, last_err
-            pace["q"] += 1
-            scan["stats"]["queries"] += 1
-            if r.get("via") == "browser":
-                scan["stats"]["tier2_used"] += 1
-            if r["status"] == "ok":
-                scan["stats"]["ok"] += 1
-                guard["consec"] = 0
-                if r.get("via") == "browser":
-                    scan["stats"]["tier2_saved"] += 1
-            elif r["status"] == "no_flights":
-                scan["stats"]["no_flights"] += 1
-                guard["consec"] = 0
-            elif r["status"] == "beyond_data":
-                scan["stats"]["beyond_data"] += 1
-                guard["consec"] = 0
-            else:
-                scan["stats"]["failed"] += 1
+            consec = apply_query_stats(scan["stats"], guard, pace, r, lock)
+            if r["status"] not in ("ok", "no_flights", "beyond_data"):
                 failed += 1
                 last_err = r.get("error", "")
-                guard["consec"] += 1
-            time.sleep(random.uniform(float(delay_lo), float(delay_hi)))
+            time.sleep(random.uniform(float(delay_lo), float(delay_hi)))  # 政策 delay,lock 外
             cool_down()
-            if guard["consec"] >= ABORT_AFTER:
+            if consec >= ABORT_AFTER:
                 rest_or_abort()
 
         for day in sample_days:
@@ -753,29 +846,50 @@ def main() -> int:
             log(f"{prefix} {origin}→{dest} {mrec['month']}"
                 f"  ✗ {mrec['status']}({mrec.get('error', '')})")
 
-    exit_code = 0
-    try:
-        for ri, route in enumerate(routes, 1):
-            free = shutil.disk_usage(str(ROOT)).free
-            if free < MIN_FREE_BYTES:
-                log(f"[scan] ⚠ 硬碟得返 {free / 1e9:.1f}GB — 安全暫停,執完位用 --resume 接力")
-                save("paused_low_disk")
-                return 3
-            key = f'{route["origin"]}-{route["dest"]}'
-            old_rec = old_recs.get(key)
-            old_months = {m["month"]: m for m in old_rec["months"]} if old_rec else {}
+    # ---- 並行掃描:每條 route 一個 task,workers 條 thread 同時跑(D-OPT-01)----
+    def commit_rec(key: str, rec: dict) -> None:
+        # 原位更新(resume)或者加新 — 喺 lock 內(scan["routes"]/rec_index 係共享)
+        with lock:
+            if key in rec_index:
+                scan["routes"][rec_index[key]] = rec
+            else:
+                scan["routes"].append(rec)
+                rec_index[key] = len(scan["routes"]) - 1
 
-            rec = {k: route[k] for k in
-                   ("origin", "origin_name", "dest", "dest_name", "region", "stay_nights")}
-            rec["months"] = []
-            consec_beyond = 0
-            skipping = False
+    def budget_reached_locked() -> bool:
+        with lock:
+            q = pace["q"]
+        return budget_reached(q, args.budget)
+
+    def process_route(ri: int, route: dict) -> dict:
+        key = f'{route["origin"]}-{route["dest"]}'
+        if stop_event.is_set():  # budget 到 / 爆碟 / abort 之後唔再開新 route
+            return {"key": key, "outcome": "skipped"}
+
+        free = shutil.disk_usage(str(ROOT)).free
+        if free < MIN_FREE_BYTES:
+            log(f"[scan] ⚠ 硬碟得返 {free / 1e9:.1f}GB — 安全暫停,執完位用 --resume 接力")
+            stop_event.set()
+            return {"key": key, "outcome": "low_disk"}
+
+        browser = browsers.get()  # 本 thread 自己嗰個 browser(lazy 開,D-OPT-02)
+        old_rec = old_recs.get(key)
+        old_months = {m["month"]: m for m in old_rec["months"]} if old_rec else {}
+
+        rec = {k: route[k] for k in
+               ("origin", "origin_name", "dest", "dest_name", "region", "stay_nights")}
+        rec["months"] = []
+        consec_beyond = 0
+        skipping = False
+        outcome = "ok"
+        try:
             for (y, m) in months:
                 mlabel = f"{y}-{m:02d}"
                 kept = old_months.get(mlabel)
                 if kept is not None and kept["status"] in KEEP_STATUSES:
                     rec["months"].append(kept)
-                    scan["stats"]["resumed_months"] += 1
+                    with lock:
+                        scan["stats"]["resumed_months"] += 1
                     consec_beyond = consec_beyond + 1 if kept["status"] == "beyond_data" else 0
                     continue
                 if skipping or consec_beyond >= BEYOND_SKIP_AFTER:
@@ -785,35 +899,39 @@ def main() -> int:
                             f"  ↷ 連續 {consec_beyond} 個月 Google 未有數據,之後月份照標跳過")
                     rec["months"].append({"month": mlabel, "status": "beyond_data",
                                           "skipped": True})
-                    scan["stats"]["beyond_data"] += 1
+                    with lock:
+                        scan["stats"]["beyond_data"] += 1
                     continue
                 mrec = scan_month(route["origin"], route["dest"],
-                                  route["stay_nights"], y, m)
+                                  route["stay_nights"], y, m, browser)
                 consec_beyond = consec_beyond + 1 if mrec["status"] == "beyond_data" else 0
                 rec["months"].append(mrec)
                 log_month(f"[{ri:>3}/{len(routes)}]", route["origin"], route["dest"], mrec)
-                if guard["consec"] >= ABORT_AFTER:
+                with lock:
+                    c = guard["consec"]
+                if c >= ABORT_AFTER:
                     rest_or_abort()
-            # 原位更新(resume)或者加新
-            if key in rec_index:
-                scan["routes"][rec_index[key]] = rec
-            else:
-                scan["routes"].append(rec)
-                rec_index[key] = len(scan["routes"]) - 1
-            save("running")  # 每條 route 完即寫檔,斷咗都有得剩
+        except AbortScan:
+            stop_event.set()
+            outcome = "aborted"
 
-            # budget check:每完成一條 route 後檢查(唔會斬斷 route-month 原子性)
-            if budget_reached(pace["q"], args.budget):
-                log(f"[scan] --budget {args.budget} 已達上限({pace['q']} queries)"
-                    f" — 正常完成,剩餘 {len(routes) - ri} 條 route 留等下次跑")
-                save("completed")
-                return 0
-    except AbortScan:
-        save("aborted_blocked")
-        log(f"[scan] ⚠ 唞極都係連環失敗 — 收工。已掃部分保留喺 {out_path.name},"
-            f"遲啲用 --resume 接力")
-        exit_code = 2
+        commit_rec(key, rec)
+        save("running")  # 每條 route 完即寫檔,斷咗都有得剩
+
+        # budget check:每完成一條 route 後檢查(唔會斬斷 route-month 原子性)
+        if outcome == "ok" and budget_reached_locked():
+            if not stop_event.is_set():
+                log(f"[scan] --budget {args.budget} 已達上限 — 正常完成,剩餘 route 留等下次跑")
+            stop_event.set()
+            outcome = "budget"
+        return {"key": key, "outcome": outcome}
+
+    exit_code = 0
+    results: list = []
+    try:
+        results = run_routes_parallel(routes, process_route, workers)
     except KeyboardInterrupt:
+        stop_event.set()
         save("interrupted")
         log(f"[scan] 手動中斷,已掃部分保留喺 {out_path.name}(--resume 可接力)")
         exit_code = 1
@@ -825,8 +943,17 @@ def main() -> int:
             pass
         exit_code = 3
     finally:
-        if browser is not None:
-            browser.close()
+        browsers.close_all()
+
+    outcomes = {res.get("outcome") for res in results if res}
+    if exit_code == 0 and "low_disk" in outcomes:
+        save("paused_low_disk")
+        return 3
+    if exit_code == 0 and "aborted" in outcomes:
+        save("aborted_blocked")
+        log(f"[scan] ⚠ 唞極都係連環失敗 — 收工。已掃部分保留喺 {out_path.name},"
+            f"遲啲用 --resume 接力")
+        exit_code = 2
 
     if exit_code:
         return exit_code
