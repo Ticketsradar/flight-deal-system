@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Travelpayouts 覆蓋率 Spike（決策閘）** ✅ 2026-06-14 — 拍板 **FALLBACK**(Travelpayouts 來回數據太疏);詳見 `research/TRAVELPAYOUTS-SPIKE.md`
 - [x] **Phase 2: 彈性行程日數** ✅ 2026-06-14 — 每個平價日標明行程日數 + 來回價,按價分層,撳跳對應 depart+return 嘅 Google Flights(NGO 實證出 4–8 日)
-- [ ] **Phase 3: 可靠每日更新** - 每日可靠自動更新 + 容錯 partial upload + 網站顯示真實「最後更新」
+- [x] **Phase 3: 可靠每日更新** - 每日可靠自動更新 + 容錯 partial upload + 網站顯示真實「最後更新」 (completed 2026-06-14)
 - [ ] **Phase 4: 自家錯價偵測** - price_history 表 + 統計異常偵測,候選餵入現有 master,RSS 來源照行
 - [ ] **Phase 5: 小紅書(RedNote)scout** - deploy 小紅書 scout(MediaCrawler + cookie/session 登入),收料 → 現有 Haiku 篩 → 餵現有 master → notifier → db(原計劃 add-on 來源)
 - [ ] **Phase 6: Facebook / Instagram scout** - deploy FB/IG scout(Apify 或半人手),餵同一條 scout → master → notifier → db 路徑(原計劃 add-on 來源,反爬/ToS 最高故排最後)
@@ -76,7 +76,7 @@ Plans:
 - [x] 03-01-PLAN.md — db scanned_at fix (DAILY-02 root cause) + db.stale_routes() primitive + offline tests
 - [x] 03-02-PLAN.md — website per-route + global freshness display (DAILY-02 UI) + next build
 - [x] 03-03-PLAN.md — scanner --stale-first/--budget/--grid-step (DAILY-01) + scan.yml split-step if:always upload + weekly sweep (DAILY-03)
-- [ ] 03-04-PLAN.md — GitHub rollout: expectation + push/Secrets + dispatch & measure block rate -> cron decision (checkpoints)
+- [x] 03-04-PLAN.md — GitHub rollout: expectation + push/Secrets + dispatch & measure block rate -> cron decision (checkpoints)
 
 **UI hint**: yes
 
@@ -150,7 +150,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Travelpayouts 覆蓋率 Spike（決策閘) | 1/1 | ✅ Complete (FALLBACK) | 2026-06-14 |
 | 2. 彈性行程日數 | 1/1 | ✅ Complete | 2026-06-14 |
-| 3. 可靠每日更新 | 3/4 | In Progress (Wave 3 = GitHub rollout 待 user) | - |
+| 3. 可靠每日更新 | 4/4 | Complete   | 2026-06-14 |
 | 4. 自家錯價偵測 | 0/TBD | Not started | - |
 | 5. 小紅書(RedNote)scout | 0/TBD | Not started | - |
 | 6. Facebook / Instagram scout | 0/TBD | Not started | - |
