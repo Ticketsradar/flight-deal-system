@@ -15,8 +15,8 @@
 
 ### Daily (每日更新)
 
-- [ ] **DAILY-01**: 平機票數據**每日自動更新一次**(可靠,取代而家 ~3 日一次嘅東拼西湊)
-- [ ] **DAILY-02**: 網站每張卡(或全站)顯示**真實「最後更新」**時間,反映實際新鮮度
+- [x] **DAILY-01**: 平機票數據**每日自動更新一次**(可靠,取代而家 ~3 日一次嘅東拼西湊)
+- [x] **DAILY-02**: 網站每張卡(或全站)顯示**真實「最後更新」**時間,反映實際新鮮度
 - [ ] **DAILY-03**: 更新過程**容錯**:就算部分掃描失敗/超時,已完成部分照樣出街(唔會成日 0 更新)
 
 ### Misprice (自家錯價偵測 + 社交來源 scout)
@@ -60,8 +60,8 @@
 | FLEX-01 | Phase 2 | Complete |
 | FLEX-02 | Phase 2 | Complete |
 | FLEX-03 | Phase 2 | Complete |
-| DAILY-01 | Phase 3 | Pending |
-| DAILY-02 | Phase 3 | Pending |
+| DAILY-01 | Phase 3 | Complete |
+| DAILY-02 | Phase 3 | Complete |
 | DAILY-03 | Phase 3 | Pending |
 | MISP-01 | Phase 4 | Pending |
 | MISP-02 | Phase 4 | Pending |
@@ -71,6 +71,7 @@
 | MISP-05 | Phase 6 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 12 total
 - Mapped to phases: 12 ✓
 - Unmapped: 0 ✓
