@@ -437,6 +437,31 @@ def pick_smoke(routes: list) -> list:
 KEEP_STATUSES = {"ok", "no_flights", "no_data", "beyond_data"}  # resume 時呢啲月份直接沿用
 
 
+# ── Pure helpers (testable offline without network) ──────────────────────────
+
+def reorder_stale(routes: list[dict], stale_keys: list[str]) -> list[dict]:
+    """將 routes 按 stale_keys 排序,使最舊掃嘅路線優先。
+    stale_keys 係 db.stale_routes() 回嘅 "ORIGIN-DEST" 列表,已由最舊到最新排好。
+    不在 stale_keys 裏嘅路線(從未掃 = stalest)排最前,然後按 stale_keys 升序。
+    Pure function — 唔做任何 IO / network call。
+    """
+    stale_index = {key: i for i, key in enumerate(stale_keys)}
+    never_scanned = [r for r in routes
+                     if f"{r['origin']}-{r['dest']}" not in stale_index]
+    in_db = [r for r in routes if f"{r['origin']}-{r['dest']}" in stale_index]
+    in_db.sort(key=lambda r: stale_index[f"{r['origin']}-{r['dest']}"])
+    return never_scanned + in_db
+
+
+def budget_reached(q_done: int, budget: int | None) -> bool:
+    """當 q_done >= budget 時回 True。budget falsy(0 / None)永遠 False(無上限)。
+    Pure function。
+    """
+    if not budget:
+        return False
+    return q_done >= budget
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="引擎A:Google Flights 掃描器(fast-flights,雙層)")
     ap.add_argument("--smoke", action="store_true", help="冒煙測試:3 條代表 route、每月 1 個樣本")
@@ -454,6 +479,12 @@ def main() -> int:
                     help="每月只對最平頭 N 個出發日施加 refine(預設 10;控制 query 量)")
     ap.add_argument("--no-refine", action="store_true",
                     help="停用 return-offset refine,退回純 fixed-stay grid(舊行為)")
+    ap.add_argument("--stale-first", action="store_true",
+                    help="由 db.stale_routes() 排序,最舊掃嘅 route 優先(daily incremental 用)")
+    ap.add_argument("--budget", type=int, default=0,
+                    help="每次跑最多發多少 queries(0 = 無上限;每完成一條 route 後檢查)")
+    ap.add_argument("--grid-step", type=int, default=1,
+                    help="--grid 模式下每隔幾日抽一個樣本(1=每日,3=每3日;daily coarse 用)")
     args = ap.parse_args()
 
     cfg = yaml.safe_load((ROOT / "routes.yaml").read_text(encoding="utf-8"))
@@ -476,10 +507,18 @@ def main() -> int:
         k, n = (int(x) for x in args.slice.split("/"))
         routes = routes[k::n]  # 平均分:slice 0/12 = routes[0,12,24,...]
 
+    if args.stale_first:
+        import db as _db
+        stale = _db.stale_routes()  # [] when unconfigured — no-op safe
+        stale_keys = [f"{r['origin']}-{r['destination']}" for r in stale]
+        routes = reorder_stale(routes, stale_keys)
+        log(f"[scan] --stale-first: 讀到 {len(stale_keys)} 條 DB 路線,按舊到新排序")
+
     today = dt.date.today()
     sample_days = SAMPLE_DAYS[samples]
     if args.grid:
-        sample_days = list(range(1, 32))  # 每月每一日(scan_month 會 clamp + skip 太近嘅日)
+        step = max(1, args.grid_step)
+        sample_days = list(range(1, 32, step))  # --grid-step 控制稀密(1=每日,3=每3日)
     months = upcoming_months(args.months, sample_days, today)
 
     out_dir = ROOT / "data"
@@ -515,7 +554,10 @@ def main() -> int:
         "status": "running",
         "params": {"smoke": args.smoke, "months": len(months),
                    "samples_per_month": samples, "routes": len(routes),
-                   "resumed": bool(old_recs)},
+                   "resumed": bool(old_recs),
+                   "stale_first": args.stale_first,
+                   "budget": args.budget,
+                   "grid_step": args.grid_step},
         "stats": {"queries": 0, "ok": 0, "no_flights": 0, "failed": 0,
                   "beyond_data": 0, "tier2_used": 0, "tier2_saved": 0,
                   "resumed_months": 0},
@@ -734,6 +776,13 @@ def main() -> int:
                 scan["routes"].append(rec)
                 rec_index[key] = len(scan["routes"]) - 1
             save("running")  # 每條 route 完即寫檔,斷咗都有得剩
+
+            # budget check:每完成一條 route 後檢查(唔會斬斷 route-month 原子性)
+            if budget_reached(pace["q"], args.budget):
+                log(f"[scan] --budget {args.budget} 已達上限({pace['q']} queries)"
+                    f" — 正常完成,剩餘 {len(routes) - ri} 條 route 留等下次跑")
+                save("completed")
+                return 0
     except AbortScan:
         save("aborted_blocked")
         log(f"[scan] ⚠ 唞極都係連環失敗 — 收工。已掃部分保留喺 {out_path.name},"

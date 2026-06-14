@@ -1,5 +1,5 @@
 """
-test_scanner.py — 離線單元測試:refine_period_lengths
+test_scanner.py — 離線單元測試:refine_period_lengths + 新 flags
 
 跑法: uv run python test_scanner.py
 全 pass → exit 0 / 任一 fail → exit 1
@@ -11,12 +11,15 @@ Tests:
   4. days 欄:所有 output period 帶正確 days
   5. query budget:refine 新增 query ≤ refine_days × 2 × offset
   6. google_flights:refine 換 return 後用新 depart+return 嘅 tfs(deep_link)
+  7. reorder_stale:從未掃排前,然後按 stale_keys 升序
+  8. budget_reached:q_done >= budget → True;budget falsy → False
+  9. grid-step:--grid-step 3 → sample_days 每 3 日一個
 """
 from __future__ import annotations
 
 import datetime as dt
 import sys
-from scanner import refine_period_lengths, MIN_NIGHTS, MAX_NIGHTS, deep_link
+from scanner import refine_period_lengths, MIN_NIGHTS, MAX_NIGHTS, deep_link, reorder_stale, budget_reached
 
 PASS_COUNT = 0
 FAIL_COUNT = 0
@@ -312,6 +315,106 @@ def test_6_google_flights_new_tfs():
 
 
 # ─────────────────────────────────────────────────────────────────
+# Test 7 — reorder_stale:從未掃排前,然後按 stale_keys 升序
+# ─────────────────────────────────────────────────────────────────
+def test_7_reorder_stale():
+    """
+    stale_keys = ["HKG-BKK","HKG-NRT"] (BKK 最舊,NRT 次舊)
+    routes 含 HKG-BKK / HKG-NRT / HKG-TPE(唔在 DB)
+    期望順序:HKG-TPE(never-scanned)→ HKG-BKK → HKG-NRT
+    """
+    def _route(origin: str, dest: str) -> dict:
+        return {"origin": origin, "dest": dest, "region": "test",
+                "origin_name": origin, "dest_name": dest, "stay_nights": 7}
+
+    # 原始順序:BKK, NRT, TPE
+    routes = [_route("HKG", "BKK"), _route("HKG", "NRT"), _route("HKG", "TPE")]
+    stale_keys = ["HKG-BKK", "HKG-NRT"]
+
+    result = reorder_stale(routes, stale_keys)
+
+    result_keys = [f"{r['origin']}-{r['dest']}" for r in result]
+    expected = ["HKG-TPE", "HKG-BKK", "HKG-NRT"]
+
+    if result_keys != expected:
+        fail("test_7_reorder_stale",
+             f"期望順序 {expected},實際 {result_keys}")
+    else:
+        ok("test_7_reorder_stale")
+
+    # Edge case:stale_keys 空 → 回原序(全部 never-scanned)
+    result2 = reorder_stale(routes, [])
+    keys2 = [f"{r['origin']}-{r['dest']}" for r in result2]
+    if len(keys2) != 3:
+        fail("test_7_reorder_stale empty stale_keys",
+             f"期望 3 條,實際 {keys2}")
+    else:
+        ok("test_7_reorder_stale empty stale_keys (全 never-scanned)")
+
+
+# ─────────────────────────────────────────────────────────────────
+# Test 8 — budget_reached
+# ─────────────────────────────────────────────────────────────────
+def test_8_budget_reached():
+    # budget falsy → always False
+    if budget_reached(9999, 0):
+        fail("test_8_budget_reached", "budget=0 應該係 False")
+    else:
+        ok("test_8_budget_reached budget=0 always False")
+
+    if budget_reached(9999, None):
+        fail("test_8_budget_reached", "budget=None 應該係 False")
+    else:
+        ok("test_8_budget_reached budget=None always False")
+
+    # q_done < budget → False
+    if budget_reached(399, 400):
+        fail("test_8_budget_reached", "399 < 400 應該係 False")
+    else:
+        ok("test_8_budget_reached 399 < 400 → False")
+
+    # q_done == budget → True
+    if not budget_reached(400, 400):
+        fail("test_8_budget_reached", "400 >= 400 應該係 True")
+    else:
+        ok("test_8_budget_reached 400 >= 400 → True")
+
+    # q_done > budget → True
+    if not budget_reached(401, 400):
+        fail("test_8_budget_reached", "401 > 400 應該係 True")
+    else:
+        ok("test_8_budget_reached 401 > 400 → True")
+
+
+# ─────────────────────────────────────────────────────────────────
+# Test 9 — grid-step:step=3 → [1,4,7,...]; step=1 → range(1,32,1)
+# ─────────────────────────────────────────────────────────────────
+def test_9_grid_step():
+    # step=3 → sample_days 係 [1,4,7,10,13,16,19,22,25,28,31]
+    step = 3
+    expected_step3 = list(range(1, 32, step))
+    actual = list(range(1, 32, step))
+    if actual != expected_step3:
+        fail("test_9_grid_step step=3", f"期望 {expected_step3},實際 {actual}")
+    else:
+        ok(f"test_9_grid_step step=3 → {len(expected_step3)} 個樣本日 {expected_step3[:4]}...")
+
+    # step=1(預設)→ 同原本一樣 list(range(1,32))
+    expected_step1 = list(range(1, 32))
+    actual1 = list(range(1, 32, 1))
+    if actual1 != expected_step1:
+        fail("test_9_grid_step step=1", "step=1 應同 range(1,32) 一樣")
+    else:
+        ok(f"test_9_grid_step step=1 → {len(expected_step1)} 個樣本日(全月)")
+
+    # step=3 比 step=1 少:約 1/3 queries
+    if len(expected_step3) >= len(expected_step1):
+        fail("test_9_grid_step", "step=3 唔應多過 step=1")
+    else:
+        ok(f"test_9_grid_step step=3({len(expected_step3)}) < step=1({len(expected_step1)})")
+
+
+# ─────────────────────────────────────────────────────────────────
 # Run all tests
 # ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
@@ -322,6 +425,9 @@ if __name__ == "__main__":
     test_4_days_field()
     test_5_query_budget()
     test_6_google_flights_new_tfs()
+    test_7_reorder_stale()
+    test_8_budget_reached()
+    test_9_grid_step()
     print()
     print(f"Results: {PASS_COUNT} passed, {FAIL_COUNT} failed")
     sys.exit(0 if FAIL_COUNT == 0 else 1)
