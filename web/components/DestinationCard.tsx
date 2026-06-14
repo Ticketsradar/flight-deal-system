@@ -1,4 +1,5 @@
 import { airportInfo } from "@/lib/airports";
+import { freshnessLabel } from "@/lib/freshness";
 import type { CheapFlight, Period } from "@/lib/types";
 
 function monthLabel(m: string): string {
@@ -72,6 +73,14 @@ export default function DestinationCard({
         : `${minStay}–${maxStay}日`
       : null;
 
+  // 計呢個目的地最新一次掃描時間(用於顯示「更新於 N 日前」)
+  const lastScan =
+    flights
+      .map((f) => f.scanned_at)
+      .filter(Boolean)
+      .sort()
+      .at(-1) ?? null;
+
   const byMonth = new Map<string, Period[]>();
   for (const { month, p } of all) {
     const arr = byMonth.get(month) ?? [];
@@ -99,6 +108,7 @@ export default function DestinationCard({
           <div className="text-[11px] opacity-60">
             {cheapCount} 個最平日{stayRange ? ` · ${stayRange}` : ""}
           </div>
+          <div className="text-[10px] opacity-50">{freshnessLabel(lastScan)}</div>
         </div>
         <span className="dc-caret text-sm opacity-60">▾</span>
       </summary>
