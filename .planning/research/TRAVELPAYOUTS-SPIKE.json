@@ -1,0 +1,861 @@
+{
+ "generated_at": "2026-06-14T03:52:12",
+ "routes": [
+  [
+   "HKG",
+   "BKK"
+  ],
+  [
+   "HKG",
+   "NRT"
+  ],
+  [
+   "HKG",
+   "TPE"
+  ],
+  [
+   "HKG",
+   "SIN"
+  ],
+  [
+   "HKG",
+   "KIX"
+  ],
+  [
+   "HKG",
+   "ICN"
+  ],
+  [
+   "HKG",
+   "KUL"
+  ],
+  [
+   "HKG",
+   "NGO"
+  ],
+  [
+   "HKG",
+   "LHR"
+  ],
+  [
+   "HKG",
+   "SYD"
+  ],
+  [
+   "SZX",
+   "BKK"
+  ],
+  [
+   "CAN",
+   "ICN"
+  ]
+ ],
+ "months": [
+  "2026-07-01",
+  "2026-08-01",
+  "2026-09-01",
+  "2026-10-01",
+  "2026-11-01",
+  "2026-12-01",
+  "2027-01-01"
+ ],
+ "sample_record": {
+  "depart_date": "2026-07-19",
+  "origin": "HKG",
+  "destination": "BKK",
+  "gate": "Farera",
+  "return_date": "",
+  "found_at": "2026-06-12T07:38:03Z",
+  "trip_class": 0,
+  "value": 894,
+  "number_of_changes": 0,
+  "duration": 180,
+  "distance": 1690,
+  "show_to_affiliates": true,
+  "actual": true
+ },
+ "http_errors": {},
+ "grid": {
+  "HKG-BKK": {
+   "2026-07": {
+    "n": 30,
+    "usable_2_14": 0,
+    "no_ret": 30,
+    "nights_distinct": [],
+    "price_min": 894,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-08": {
+    "n": 30,
+    "usable_2_14": 0,
+    "no_ret": 30,
+    "nights_distinct": [],
+    "price_min": 870,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-09": {
+    "n": 26,
+    "usable_2_14": 0,
+    "no_ret": 26,
+    "nights_distinct": [],
+    "price_min": 823,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-10": {
+    "n": 23,
+    "usable_2_14": 0,
+    "no_ret": 23,
+    "nights_distinct": [],
+    "price_min": 877,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-11": {
+    "n": 20,
+    "usable_2_14": 0,
+    "no_ret": 20,
+    "nights_distinct": [],
+    "price_min": 869,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-12": {
+    "n": 4,
+    "usable_2_14": 0,
+    "no_ret": 4,
+    "nights_distinct": [],
+    "price_min": 871,
+    "age_med": 4.0,
+    "success": true
+   },
+   "2027-01": {
+    "n": 3,
+    "usable_2_14": 0,
+    "no_ret": 3,
+    "nights_distinct": [],
+    "price_min": 930,
+    "age_med": 3,
+    "success": true
+   }
+  },
+  "HKG-NRT": {
+   "2026-07": {
+    "n": 30,
+    "usable_2_14": 0,
+    "no_ret": 30,
+    "nights_distinct": [],
+    "price_min": 1120,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-08": {
+    "n": 29,
+    "usable_2_14": 0,
+    "no_ret": 29,
+    "nights_distinct": [],
+    "price_min": 1162,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-09": {
+    "n": 21,
+    "usable_2_14": 0,
+    "no_ret": 21,
+    "nights_distinct": [],
+    "price_min": 1007,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-10": {
+    "n": 29,
+    "usable_2_14": 0,
+    "no_ret": 29,
+    "nights_distinct": [],
+    "price_min": 1183,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-11": {
+    "n": 16,
+    "usable_2_14": 0,
+    "no_ret": 16,
+    "nights_distinct": [],
+    "price_min": 1238,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-12": {
+    "n": 3,
+    "usable_2_14": 0,
+    "no_ret": 3,
+    "nights_distinct": [],
+    "price_min": 1280,
+    "age_med": 3,
+    "success": true
+   },
+   "2027-01": {
+    "n": 2,
+    "usable_2_14": 0,
+    "no_ret": 2,
+    "nights_distinct": [],
+    "price_min": 1280,
+    "age_med": 3.5,
+    "success": true
+   }
+  },
+  "HKG-TPE": {
+   "2026-07": {
+    "n": 21,
+    "usable_2_14": 0,
+    "no_ret": 21,
+    "nights_distinct": [],
+    "price_min": 788,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-08": {
+    "n": 21,
+    "usable_2_14": 0,
+    "no_ret": 21,
+    "nights_distinct": [],
+    "price_min": 721,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-09": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 1,
+    "nights_distinct": [],
+    "price_min": 984,
+    "age_med": 3,
+    "success": true
+   },
+   "2026-10": {
+    "n": 13,
+    "usable_2_14": 0,
+    "no_ret": 13,
+    "nights_distinct": [],
+    "price_min": 791,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-11": {
+    "n": 3,
+    "usable_2_14": 0,
+    "no_ret": 3,
+    "nights_distinct": [],
+    "price_min": 732,
+    "age_med": 2,
+    "success": true
+   },
+   "2026-12": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 1,
+    "nights_distinct": [],
+    "price_min": 1401,
+    "age_med": 1,
+    "success": true
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   }
+  },
+  "HKG-SIN": {
+   "2026-07": {
+    "n": 30,
+    "usable_2_14": 0,
+    "no_ret": 30,
+    "nights_distinct": [],
+    "price_min": 1078,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-08": {
+    "n": 30,
+    "usable_2_14": 0,
+    "no_ret": 30,
+    "nights_distinct": [],
+    "price_min": 857,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-09": {
+    "n": 29,
+    "usable_2_14": 0,
+    "no_ret": 29,
+    "nights_distinct": [],
+    "price_min": 991,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-10": {
+    "n": 30,
+    "usable_2_14": 0,
+    "no_ret": 30,
+    "nights_distinct": [],
+    "price_min": 857,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-11": {
+    "n": 12,
+    "usable_2_14": 0,
+    "no_ret": 12,
+    "nights_distinct": [],
+    "price_min": 1103,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-12": {
+    "n": 9,
+    "usable_2_14": 0,
+    "no_ret": 9,
+    "nights_distinct": [],
+    "price_min": 1371,
+    "age_med": 4,
+    "success": true
+   },
+   "2027-01": {
+    "n": 4,
+    "usable_2_14": 0,
+    "no_ret": 4,
+    "nights_distinct": [],
+    "price_min": 931,
+    "age_med": 3.0,
+    "success": true
+   }
+  },
+  "HKG-KIX": {
+   "2026-07": {
+    "n": 28,
+    "usable_2_14": 0,
+    "no_ret": 28,
+    "nights_distinct": [],
+    "price_min": 1217,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-08": {
+    "n": 12,
+    "usable_2_14": 0,
+    "no_ret": 12,
+    "nights_distinct": [],
+    "price_min": 1151,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-09": {
+    "n": 8,
+    "usable_2_14": 0,
+    "no_ret": 8,
+    "nights_distinct": [],
+    "price_min": 1047,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-10": {
+    "n": 25,
+    "usable_2_14": 0,
+    "no_ret": 25,
+    "nights_distinct": [],
+    "price_min": 1047,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-11": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 1,
+    "nights_distinct": [],
+    "price_min": 1118,
+    "age_med": 0,
+    "success": true
+   },
+   "2026-12": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 1,
+    "nights_distinct": [],
+    "price_min": 1760,
+    "age_med": 1,
+    "success": true
+   },
+   "2027-01": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 1,
+    "nights_distinct": [],
+    "price_min": 1814,
+    "age_med": 4,
+    "success": true
+   }
+  },
+  "HKG-ICN": {
+   "2026-07": {
+    "n": 30,
+    "usable_2_14": 0,
+    "no_ret": 30,
+    "nights_distinct": [],
+    "price_min": 866,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-08": {
+    "n": 30,
+    "usable_2_14": 0,
+    "no_ret": 30,
+    "nights_distinct": [],
+    "price_min": 882,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-09": {
+    "n": 21,
+    "usable_2_14": 0,
+    "no_ret": 21,
+    "nights_distinct": [],
+    "price_min": 950,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-10": {
+    "n": 29,
+    "usable_2_14": 0,
+    "no_ret": 29,
+    "nights_distinct": [],
+    "price_min": 864,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-11": {
+    "n": 12,
+    "usable_2_14": 0,
+    "no_ret": 12,
+    "nights_distinct": [],
+    "price_min": 962,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-12": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 1,
+    "nights_distinct": [],
+    "price_min": 1052,
+    "age_med": 5,
+    "success": true
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   }
+  },
+  "HKG-KUL": {
+   "2026-07": {
+    "n": 27,
+    "usable_2_14": 0,
+    "no_ret": 27,
+    "nights_distinct": [],
+    "price_min": 980,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-08": {
+    "n": 20,
+    "usable_2_14": 0,
+    "no_ret": 20,
+    "nights_distinct": [],
+    "price_min": 990,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-09": {
+    "n": 21,
+    "usable_2_14": 0,
+    "no_ret": 21,
+    "nights_distinct": [],
+    "price_min": 758,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-10": {
+    "n": 21,
+    "usable_2_14": 0,
+    "no_ret": 21,
+    "nights_distinct": [],
+    "price_min": 984,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-11": {
+    "n": 14,
+    "usable_2_14": 0,
+    "no_ret": 14,
+    "nights_distinct": [],
+    "price_min": 888,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-12": {
+    "n": 5,
+    "usable_2_14": 0,
+    "no_ret": 5,
+    "nights_distinct": [],
+    "price_min": 945,
+    "age_med": 4,
+    "success": true
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   }
+  },
+  "HKG-NGO": {
+   "2026-07": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 1,
+    "nights_distinct": [],
+    "price_min": 1234,
+    "age_med": 0,
+    "success": true
+   },
+   "2026-08": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 1,
+    "nights_distinct": [],
+    "price_min": 1215,
+    "age_med": 2,
+    "success": true
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   }
+  },
+  "HKG-LHR": {
+   "2026-07": {
+    "n": 14,
+    "usable_2_14": 0,
+    "no_ret": 14,
+    "nights_distinct": [],
+    "price_min": 2646,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-08": {
+    "n": 12,
+    "usable_2_14": 0,
+    "no_ret": 12,
+    "nights_distinct": [],
+    "price_min": 2774,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-09": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   },
+   "2026-10": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   },
+   "2026-11": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   }
+  },
+  "HKG-SYD": {
+   "2026-07": {
+    "n": 8,
+    "usable_2_14": 0,
+    "no_ret": 8,
+    "nights_distinct": [],
+    "price_min": 2785,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-08": {
+    "n": 6,
+    "usable_2_14": 0,
+    "no_ret": 6,
+    "nights_distinct": [],
+    "price_min": 2354,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-09": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 1,
+    "nights_distinct": [],
+    "price_min": 2455,
+    "age_med": 3,
+    "success": true
+   },
+   "2026-10": {
+    "n": 23,
+    "usable_2_14": 0,
+    "no_ret": 23,
+    "nights_distinct": [],
+    "price_min": 2266,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-11": {
+    "n": 13,
+    "usable_2_14": 0,
+    "no_ret": 13,
+    "nights_distinct": [],
+    "price_min": 2295,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-12": {
+    "n": 2,
+    "usable_2_14": 0,
+    "no_ret": 2,
+    "nights_distinct": [],
+    "price_min": 2198,
+    "age_med": 5.5,
+    "success": true
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   }
+  },
+  "SZX-BKK": {
+   "2026-07": {
+    "n": 18,
+    "usable_2_14": 0,
+    "no_ret": 18,
+    "nights_distinct": [],
+    "price_min": 968,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-08": {
+    "n": 17,
+    "usable_2_14": 0,
+    "no_ret": 17,
+    "nights_distinct": [],
+    "price_min": 976,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-09": {
+    "n": 16,
+    "usable_2_14": 0,
+    "no_ret": 16,
+    "nights_distinct": [],
+    "price_min": 913,
+    "age_med": 2.5,
+    "success": true
+   },
+   "2026-10": {
+    "n": 6,
+    "usable_2_14": 0,
+    "no_ret": 6,
+    "nights_distinct": [],
+    "price_min": 915,
+    "age_med": 1.0,
+    "success": true
+   },
+   "2026-11": {
+    "n": 7,
+    "usable_2_14": 0,
+    "no_ret": 7,
+    "nights_distinct": [],
+    "price_min": 1145,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-12": {
+    "n": 2,
+    "usable_2_14": 0,
+    "no_ret": 2,
+    "nights_distinct": [],
+    "price_min": 1359,
+    "age_med": 4.0,
+    "success": true
+   },
+   "2027-01": {
+    "n": 2,
+    "usable_2_14": 0,
+    "no_ret": 2,
+    "nights_distinct": [],
+    "price_min": 934,
+    "age_med": 4.5,
+    "success": true
+   }
+  },
+  "CAN-ICN": {
+   "2026-07": {
+    "n": 29,
+    "usable_2_14": 0,
+    "no_ret": 29,
+    "nights_distinct": [],
+    "price_min": 1026,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-08": {
+    "n": 21,
+    "usable_2_14": 0,
+    "no_ret": 21,
+    "nights_distinct": [],
+    "price_min": 1087,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-09": {
+    "n": 23,
+    "usable_2_14": 0,
+    "no_ret": 23,
+    "nights_distinct": [],
+    "price_min": 1149,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-10": {
+    "n": 17,
+    "usable_2_14": 0,
+    "no_ret": 17,
+    "nights_distinct": [],
+    "price_min": 1251,
+    "age_med": 1,
+    "success": true
+   },
+   "2026-11": {
+    "n": 1,
+    "usable_2_14": 0,
+    "no_ret": 1,
+    "nights_distinct": [],
+    "price_min": 1254,
+    "age_med": 2,
+    "success": true
+   },
+   "2026-12": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   },
+   "2027-01": {
+    "n": 0,
+    "usable_2_14": 0,
+    "no_ret": 0,
+    "nights_distinct": [],
+    "price_min": null,
+    "age_med": null,
+    "success": true
+   }
+  }
+ },
+ "verdict_auto": "多數係單程數據 → month-matrix 唔啱攞來回變長度 → 試 week-matrix 或 FALLBACK"
+}
