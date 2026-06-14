@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 3 完成(03-04 rollout 落地)— repo 改 public(免費無限 Actions)+ 雲端 daily/weekly cron 連 Playwright browser 後備已上線。下一步:merge 待 user、Vercel deploy、或 Phase 4"
+stopped_at: "Phase 3 完成(03-04 rollout 落地)— repo 改 public(免費無限 Actions)+ 雲端 daily 全量掃描(20 shard 每日掃晒 171 條)連 Playwright browser 後備已上線。下一步:merge 待 user、Vercel deploy、或 Phase 4"
 last_updated: "2026-06-14T07:30:00.000Z"
-last_activity: "2026-06-14 -- 03-04 rollout:量度純 HTTP 雲端 5/6 shard 畀 Google 軟封鎖→開 browser 後備證實繞到(🌐 綠 job)→repo 改 public→scan.yml(daily 8 shard cron 18:00)+scan-weekly(16 shard cron 週日)上線"
+last_activity: "2026-06-14 -- 03-04 rollout:量度純 HTTP 雲端 5/6 shard 畀 Google 軟封鎖→開 browser 後備證實繞到(🌐 綠 job)→repo 改 public→user 揀全量每日→scan.yml(daily 20 shard 掃晒全部 171,cron 18:00)上線;weekly 因全覆蓋冗餘刪走"
 progress:
   total_phases: 6
   completed_phases: 3
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-06-14)
 
 Phase: 3 (可靠每日更新) — ✅ 完成(4/4 plans,含 03-04 rollout 落地)
 Plan: 4 of 4 done (03-01/02/03/04 ✅)
-Status: ✅ Phase 3 完成。雲端 daily(8 shard,cron 18:00 UTC)+ weekly(16 shard,cron 週日 02:00 UTC)連 browser 後備已上線並 push 上 phase-3-website。**待 user merge PR → cron 正式生效**
+Status: ✅ Phase 3 完成。雲端 daily 全量(20 shard 每日掃晒全部 171 條,cron 18:00 UTC,browser 後備)已上線並 push 上 phase-3-website(weekly 因冗餘刪走)。**待 user merge PR → cron 正式生效**
 Last activity: 2026-06-14 -- 03-04 rollout 量度+落地(見 frontmatter last_activity)
 
 Progress: [█████░░░░░] ~50% (Phase 1/2/3 完成;Phase 4 自家錯價偵測未做;Vercel deploy 另一條 go-live 線)
@@ -66,7 +66,7 @@ Recent decisions affecting current work:
 - [Research]: CLAUDE.md 舊「硬牆(43 萬 query)」假設係錯 — 參考網站只係 dur±2 window,fast-flights 加薄 ±N 內層幾千 query 就得
 - [Phase 3 Plan 03]: budget_reached() 喺每條 route 完成後先檢查,唔係 mid-route,確保 per-route 原子寫入唔被打斷
 - [Phase 3 Plan 03→04]: daily cron 一度 comment 住等量度;**03-04 量度後已 uncomment 上線**
-- [Phase 3 Plan 04 ✅]: **雲端純 HTTP 畀 Google 軟封鎖**(GitHub 共用 Azure IP;5/6 shard 紅、只收 5 route)→ **開 Playwright browser 後備繞到**(行 JS 避空殼頁,🌐 標記,job 綠)→ **repo 改 public 攞免費無限 Actions** 養活 browser 慢成本 → daily 8 shard(cron 18:00 UTC)+ weekly 16 shard(cron 週日 02:00)上線
+- [Phase 3 Plan 04 ✅]: **雲端純 HTTP 畀 Google 軟封鎖**(GitHub 共用 Azure IP;5/6 shard 紅、只收 5 route)→ **開 Playwright browser 後備繞到**(行 JS 避空殼頁,🌐 標記,job 綠)→ **repo 改 public 攞免費無限 Actions** 養活 browser 慢成本 → user 揀全量每日 → daily 20 shard 掃晒全部 171 條(cron 18:00 UTC,無 budget);weekly 因 daily 已全覆蓋而刪走(避免疊重複 load + fair-use)
 
 ### Pending Todos
 

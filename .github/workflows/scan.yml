@@ -1,7 +1,9 @@
-# Stream A — 平機票每日增量掃描(browser 後備 ON,public repo 免費無限分鐘)
+# Stream A — 平機票每日全量掃描(全部 171 條每日刷,browser 後備 ON)
 # ============================================================
-# 每日揀最舊(scanned_at 最耐)嗰批 route 優先掃,每 shard 封頂 400 queries。
-# 8 shard 並行,~27 條 route/日 → 全部 171 條約 6 日轉一圈;週日有 full sweep 做安全網。
+# public repo Actions 免費無限 → 每日掃晒全部 171 條 route(grid-step 3 + refine)。
+# 20 shard 並行,每 shard ~9 route × ~117 query ≈ ~1050 query;實測 ~11s/query
+#   → 每片 ~3.2 鐘跑完(遠離 GitHub 單 job 6 鐘上限,留好多緩衝畀封鎖慢嗰日)。
+# --stale-first:萬一某片超時,最舊嗰啲已優先掃好,最後跳過嘅係最新鮮嗰啲。
 #
 # 雙層抓價:HTTP fast-flights(快)→ 撞到 Google 空殼頁軟封鎖就自動轉
 #   Playwright 真瀏覽器(行 JS,繞到封鎖;log 標 🌐)。03-04 量度證實雲端
@@ -11,9 +13,11 @@
 # DAILY-03 容錯:scanner 同 upload 拆兩 step,upload 用 if: always(),
 #   就算 scan 超時/失敗,已寫低嘅 data/scan_*.json 都照出街。
 #
-# 詳見 .planning/research/DAILY-UPDATES.md + .planning/phases/03-*。
+# ⚠️ 用量提示:全量每日 ≈ 20k query/日 ≈ ~80 機鐘/日。public Actions 雖免費但有
+#   fair-use 政策,若 GitHub 來信警告 / shard 經常變紅,就調返「每 2–3 日轉一圈」
+#   (減 shard + 加返 --budget)。詳見 .planning/research/DAILY-UPDATES.md。
 
-name: Stream A — 平機票每日增量掃描
+name: Stream A — 平機票每日全量掃描
 
 on:
   schedule:
@@ -28,12 +32,12 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 350  # 最壞情況(全部走 browser)400×50s≈333 分鐘,穩落 6 鐘 wall 內
+    timeout-minutes: 350  # 正常 ~3.2 鐘/片;封鎖慢嗰日都有大量緩衝至 6 鐘 wall
     strategy:
       fail-fast: false  # 一片爆唔好拖死其他片
-      max-parallel: 8
+      max-parallel: 20
       matrix:
-        k: [0, 1, 2, 3, 4, 5, 6, 7]  # 8 shards;改數量記得連 --slice 分母一齊改
+        k: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]  # 20 shards;改數量記得連 --slice 一齊改
 
     steps:
       - uses: actions/checkout@v4
@@ -45,18 +49,17 @@ jobs:
       - name: 裝 Playwright chromium(+系統庫)
         run: uv run playwright install --with-deps chromium
 
-      - name: 掃描分片 ${{ matrix.k }}/8(增量,粗格 step3,refine ON,browser 後備)
+      - name: 掃描分片 ${{ matrix.k }}/20(全量,粗格 step3,refine ON,browser 後備)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
         run: |
           uv run python scanner.py \
-            --slice ${{ matrix.k }}/8 \
+            --slice ${{ matrix.k }}/20 \
             --grid \
             --grid-step 3 \
-            --stale-first \
-            --budget 400
+            --stale-first
 
       # DAILY-03:scan 超時/失敗都要跑 upload,確保部分結果出街
       - name: 上傳已完成部分(即使掃描失敗)
