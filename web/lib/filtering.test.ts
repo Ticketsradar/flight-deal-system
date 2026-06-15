@@ -1,6 +1,21 @@
 import { describe, it, expect } from "vitest";
-import { periodDays, groupMatchesDays, STALE_DAYS, isStale, type DealGroup } from "@/lib/filtering";
+import { periodDays, groupMatchesDays, STALE_DAYS, isStale, splitColumns, type DealGroup } from "@/lib/filtering";
 import type { Period } from "@/lib/types";
+
+describe("splitColumns", () => {
+  it("round-robins items into n columns preserving order within each", () => {
+    expect(splitColumns([0, 1, 2, 3, 4, 5], 2)).toEqual([
+      [0, 2, 4],
+      [1, 3, 5],
+    ]);
+  });
+  it("n=1 returns a single column in original order", () => {
+    expect(splitColumns([0, 1, 2], 1)).toEqual([[0, 1, 2]]);
+  });
+  it("handles items fewer than columns (empty trailing columns)", () => {
+    expect(splitColumns([0], 2)).toEqual([[0], []]);
+  });
+});
 
 const p = (depart: string | null, ret: string | null, days?: number | null): Period => ({
   depart, return: ret, price: 1000, days: days ?? null,

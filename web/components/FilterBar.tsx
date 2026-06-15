@@ -22,29 +22,20 @@ function Chip({
       onClick={onClick}
       aria-pressed={active}
       className={
-        "px-3 py-1.5 rounded-lg text-sm font-medium border transition inline-flex items-center gap-1 " +
+        // 圓形;選中 = 綠色發光(綠填充 + 綠光暈 + 綠邊),唔用 ✓
+        "px-3 py-1.5 rounded-full text-sm font-medium border transition " +
         (active
-          ? "bg-emerald-500 border-emerald-400 text-white shadow-sm"
-          : "bg-white/5 border-white/20 text-white/80 hover:bg-white/10 hover:border-white/40")
+          ? "bg-emerald-500 border-emerald-300 text-white shadow-[0_0_12px_2px_rgba(16,185,129,0.7)]"
+          : "bg-white/5 border-white/25 text-white/80 hover:bg-white/10 hover:border-white/45")
       }
     >
-      {active && <span aria-hidden className="text-xs leading-none">✓</span>}
       {children}
     </button>
   );
 }
 
-function RowLabel({ text, n }: { text: string; n: number }) {
-  return (
-    <span className="text-xs shrink-0 flex items-center gap-1.5 min-w-[4rem]">
-      <span className="opacity-70">{text}</span>
-      {n > 0 && (
-        <span className="bg-emerald-500/25 text-emerald-200 rounded px-1.5 text-[11px] leading-tight">
-          已揀 {n}
-        </span>
-      )}
-    </span>
-  );
+function RowLabel({ text }: { text: string }) {
+  return <span className="opacity-70 text-xs shrink-0 min-w-[4rem]">{text}</span>;
 }
 
 export default function FilterBar({
@@ -73,7 +64,7 @@ export default function FilterBar({
   return (
     <div className="glass rounded-xl p-3 flex flex-col gap-3 text-sm">
       <div className="flex flex-wrap gap-2 items-center">
-        <RowLabel text="出發地" n={origins.length} />
+        <RowLabel text="出發地" />
         {ORIGINS.map((o) => (
           <Chip
             key={o.code}
@@ -86,7 +77,7 @@ export default function FilterBar({
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
-        <RowLabel text="洲份" n={continents.length} />
+        <RowLabel text="洲份" />
         {CONTINENTS.map((c) => (
           <Chip
             key={c}
@@ -100,7 +91,7 @@ export default function FilterBar({
 
       {dayOptions.length > 0 && (
         <div className="flex flex-wrap gap-2 items-center">
-          <RowLabel text="行程日數" n={days.length} />
+          <RowLabel text="行程日數" />
           {dayOptions.map((d) => (
             <Chip
               key={d}

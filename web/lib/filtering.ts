@@ -48,6 +48,14 @@ export function applyFilters(
     .sort((a, b) => a.min - b.min);
 }
 
+// Masonry:把 items 輪流分入 n 欄(item i → 欄 i%n),欄內保持原順序。
+// → 最平兩張並排喺頂、左右行排序;每欄獨立 stack,撳開一張只長嗰欄,零留白。
+export function splitColumns<T>(items: T[], n: number): T[][] {
+  const cols: T[][] = Array.from({ length: Math.max(1, n) }, () => []);
+  items.forEach((it, i) => cols[i % cols.length].push(it));
+  return cols;
+}
+
 // 抽出資料中所有出現過嘅行程日數(畀 days filter chips 用),升序
 export function availableDays(groups: DealGroup[]): number[] {
   const s = new Set<number>();
