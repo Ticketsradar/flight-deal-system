@@ -1,6 +1,31 @@
 import { describe, it, expect } from "vitest";
-import { periodDays, groupMatchesDays, STALE_DAYS, isStale, splitColumns, type DealGroup } from "@/lib/filtering";
+import { periodDays, groupMatchesDays, STALE_DAYS, isStale, splitColumns, groupByDestination, type DealGroup } from "@/lib/filtering";
 import type { Period } from "@/lib/types";
+
+describe("groupByDestination", () => {
+  const g = (origin: string, destination: string, min: number): DealGroup => ({
+    origin,
+    destination,
+    continent: "亞洲",
+    min,
+    flights: [],
+  });
+
+  it("collapses by destination; origins cheapest-first; dest groups sorted by min", () => {
+    const out = groupByDestination([
+      g("HKG", "NRT", 2078),
+      g("SZX", "NRT", 1950),
+      g("HKG", "BKK", 1587),
+    ]);
+    expect(out.map((d) => d.destination)).toEqual(["BKK", "NRT"]); // 1587 < 1950
+    const nrt = out.find((d) => d.destination === "NRT")!;
+    expect(nrt.origins.map((o) => o.origin)).toEqual(["SZX", "HKG"]); // 1950 < 2078
+    expect(nrt.min).toBe(1950);
+    expect(nrt.continent).toBe("亞洲");
+    const bkk = out.find((d) => d.destination === "BKK")!;
+    expect(bkk.origins.map((o) => o.origin)).toEqual(["HKG"]); // single origin ok
+  });
+});
 
 describe("splitColumns", () => {
   it("round-robins items into n columns preserving order within each", () => {

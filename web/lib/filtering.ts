@@ -48,6 +48,37 @@ export function applyFilters(
     .sort((a, b) => a.min - b.min);
 }
 
+// 多出發地比價:把 origin×destination 嘅 DealGroup[] 收成「每個目的地一組」,
+// 組內每個出發地一行(最平出發地排頭),目的地之間按最平價排序。
+export interface OriginEntry {
+  origin: string;
+  flights: CheapFlight[];
+  min: number;
+}
+export interface DestCompareGroup {
+  destination: string;
+  continent: Continent;
+  origins: OriginEntry[];
+  min: number;
+}
+
+export function groupByDestination(groups: DealGroup[]): DestCompareGroup[] {
+  const byDest = new Map<string, DestCompareGroup>();
+  for (const g of groups) {
+    let d = byDest.get(g.destination);
+    if (!d) {
+      d = { destination: g.destination, continent: g.continent, origins: [], min: Infinity };
+      byDest.set(g.destination, d);
+    }
+    d.origins.push({ origin: g.origin, flights: g.flights, min: g.min });
+    d.min = Math.min(d.min, g.min);
+  }
+  const out = [...byDest.values()];
+  for (const d of out) d.origins.sort((a, b) => a.min - b.min); // 最平出發地排頭
+  out.sort((a, b) => a.min - b.min); // 目的地由平到貴
+  return out;
+}
+
 // Masonry:把 items 輪流分入 n 欄(item i → 欄 i%n),欄內保持原順序。
 // → 最平兩張並排喺頂、左右行排序;每欄獨立 stack,撳開一張只長嗰欄,零留白。
 export function splitColumns<T>(items: T[], n: number): T[][] {

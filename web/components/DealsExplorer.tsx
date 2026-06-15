@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import DestinationCard from "@/components/DestinationCard";
+import CompareCard from "@/components/CompareCard";
 import FilterBar from "@/components/FilterBar";
-import { applyFilters, availableDays, splitColumns, type DealGroup } from "@/lib/filtering";
+import {
+  applyFilters,
+  availableDays,
+  groupByDestination,
+  splitColumns,
+  type DealGroup,
+} from "@/lib/filtering";
 
 // 手機 1 欄 / ≥640px 2 欄。預設 1(mobile-first:SSR + 手機唔閃,desktop 上嚟先升 2 欄)
 function useColumnCount(): number {
@@ -18,6 +25,32 @@ function useColumnCount(): number {
   return n;
 }
 
+// masonry:輪流入欄,每欄獨立 stack → 撳開一張只長嗰欄,隔籬欄唔郁、零留白
+function Masonry<T>({
+  items,
+  colCount,
+  keyOf,
+  children,
+}: {
+  items: T[];
+  colCount: number;
+  keyOf: (t: T) => string;
+  children: (t: T) => React.ReactNode;
+}) {
+  const columns = splitColumns(items, colCount);
+  return (
+    <div className="flex gap-3 items-start">
+      {columns.map((col, ci) => (
+        <div key={ci} className="flex-1 min-w-0 flex flex-col gap-3">
+          {col.map((it) => (
+            <Fragment key={keyOf(it)}>{children(it)}</Fragment>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function DealsExplorer({ groups }: { groups: DealGroup[] }) {
   const [origins, setOrigins] = useState<string[]>([]);
   const [continents, setContinents] = useState<string[]>([]);
@@ -30,8 +63,12 @@ export default function DealsExplorer({ groups }: { groups: DealGroup[] }) {
     () => applyFilters(groups, { origins, continents, days, maxPrice }),
     [groups, origins, continents, days, maxPrice]
   );
-  // masonry:輪流入欄,每欄獨立 stack → 撳開一張只長嗰欄,隔籬欄唔郁、零留白
-  const columns = useMemo(() => splitColumns(shown, colCount), [shown, colCount]);
+  // 揀咗 2+ 出發地 → 合併比價(每個目的地一張卡,各出發地一行價)
+  const compareMode = origins.length >= 2;
+  const destGroups = useMemo(
+    () => (compareMode ? groupByDestination(shown) : []),
+    [compareMode, shown]
+  );
 
   const reset = () => {
     setOrigins([]);
@@ -61,22 +98,25 @@ export default function DealsExplorer({ groups }: { groups: DealGroup[] }) {
         <div className="glass rounded-xl p-4 opacity-80 text-sm">
           冇符合條件嘅航線,試下放寬篩選。
         </div>
+      ) : compareMode ? (
+        <Masonry items={destGroups} colCount={colCount} keyOf={(g) => g.destination}>
+          {(g) => <CompareCard group={g} selectedDays={days} />}
+        </Masonry>
       ) : (
-        <div className="flex gap-3 items-start">
-          {columns.map((col, ci) => (
-            <div key={ci} className="flex-1 min-w-0 flex flex-col gap-3">
-              {col.map((g) => (
-                <DestinationCard
-                  key={`${g.origin}-${g.destination}`}
-                  origin={g.origin}
-                  destination={g.destination}
-                  flights={g.flights}
-                  selectedDays={days}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
+        <Masonry
+          items={shown}
+          colCount={colCount}
+          keyOf={(g) => `${g.origin}-${g.destination}`}
+        >
+          {(g) => (
+            <DestinationCard
+              origin={g.origin}
+              destination={g.destination}
+              flights={g.flights}
+              selectedDays={days}
+            />
+          )}
+        </Masonry>
       )}
     </>
   );
