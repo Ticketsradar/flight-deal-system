@@ -1,35 +1,21 @@
 import { getErrorFares, getCheapFlights, getMeta } from "@/lib/data";
 import BackgroundSlideshow from "@/components/BackgroundSlideshow";
 import Header from "@/components/Header";
-import Filters from "@/components/Filters";
+import DealsExplorer from "@/components/DealsExplorer";
 import ErrorFareCard from "@/components/ErrorFareCard";
-import DestinationCard from "@/components/DestinationCard";
 import TelegramCTA from "@/components/TelegramCTA";
 import Disclaimer from "@/components/Disclaimer";
-import type { CheapFlight, Filters as F } from "@/lib/types";
+import { continentOf } from "@/lib/continents";
+import { isStale, type DealGroup } from "@/lib/filtering";
+import type { CheapFlight } from "@/lib/types";
 
 // 每次 request 即時讀 Supabase(資料每日更新,要新鮮)
 export const dynamic = "force-dynamic";
 
-type SP = Record<string, string | string[] | undefined>;
-
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<SP>;
-}) {
-  const sp = await searchParams; // Next.js 16:searchParams 係 Promise
-  const one = (v: string | string[] | undefined) =>
-    (Array.isArray(v) ? v[0] : v) || undefined;
-  const current: F = {
-    origin: one(sp.origin) || "HKG", // 預設香港(避開 Supabase 1000 行上限)
-    region: one(sp.region),
-    maxPrice: one(sp.maxPrice) ? Number(one(sp.maxPrice)) : undefined,
-  };
-
-  const [fares, originFlights, meta] = await Promise.all([
+export default async function Page() {
+  const [allFlights, fares, meta] = await Promise.all([
+    getCheapFlights({}), // 全部出發地(≤2000 行;client 端再篩)
     getErrorFares(),
-    getCheapFlights({ origin: current.origin }), // 淨係攞呢個出發地(<1000 行)
     getMeta(),
   ]);
 
@@ -43,30 +29,35 @@ export default async function Page({
       y++;
     }
   }
-  const within7 = originFlights.filter((f) => f.month && allowedMonths.has(f.month));
+  const within7 = allFlights.filter((f) => f.month && allowedMonths.has(f.month));
 
-  // 由資料抽地區選項
-  const regions = [...new Set(within7.map((f) => f.region).filter(Boolean) as string[])].sort();
-
-  // 套地區 + 預算篩選
-  let shown = within7;
-  if (current.region) shown = shown.filter((f) => f.region === current.region);
-  if (current.maxPrice) shown = shown.filter((f) => (f.price_hkd ?? Infinity) <= current.maxPrice!);
-
-  // 按目的地分組 → 照最平價排
-  const byDest = new Map<string, CheapFlight[]>();
-  for (const f of shown) {
-    const arr = byDest.get(f.destination) ?? [];
+  // 按 (出發地, 目的地) 分組
+  const byPair = new Map<string, CheapFlight[]>();
+  for (const f of within7) {
+    const key = `${f.origin}-${f.destination}`;
+    const arr = byPair.get(key) ?? [];
     arr.push(f);
-    byDest.set(f.destination, arr);
+    byPair.set(key, arr);
   }
-  const groups = [...byDest.entries()]
-    .map(([dest, fs]) => ({
-      dest,
-      fs,
+
+  // 砌 groups + 隱藏過時數據(該組最新 scanned_at 舊過 STALE_DAYS 就唔顯示)
+  const groups: DealGroup[] = [...byPair.values()]
+    .map((fs) => ({
+      origin: fs[0].origin,
+      destination: fs[0].destination,
+      continent: continentOf(fs[0].destination),
       min: Math.min(...fs.map((f) => f.price_hkd ?? Infinity)),
+      flights: fs,
     }))
-    .sort((a, b) => a.min - b.min);
+    .filter((g) => {
+      const freshest =
+        g.flights
+          .map((f) => f.scanned_at)
+          .filter(Boolean)
+          .sort()
+          .at(-1) ?? null;
+      return !isStale(freshest, now);
+    });
 
   return (
     <>
@@ -96,34 +87,15 @@ export default async function Page({
           )}
         </section>
 
-        {/* 平機票:每個目的地一張卡,撳開睇晒月份 */}
+        {/* 平機票:每條航線一張卡,撳開睇晒月份 */}
         <section className="mt-9">
           <h2 className="text-2xl font-bold mb-1">
             💸 平機票{" "}
-            <span className="text-sm font-normal opacity-60">({groups.length} 個目的地)</span>
+            <span className="text-sm font-normal opacity-60">({groups.length} 條航線)</span>
           </h2>
           <p className="text-xs opacity-60 mb-3">撳目的地展開 → 睇晒每個月最平價,撳邊個月跳去嗰月 Google Flights</p>
 
-          <div className="mb-4">
-            <Filters current={current} regions={regions} />
-          </div>
-
-          {groups.length === 0 ? (
-            <div className="glass rounded-xl p-4 opacity-80 text-sm">
-              冇符合條件嘅目的地,試下放寬篩選或者轉出發地。
-            </div>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 items-start">
-              {groups.map((g) => (
-                <DestinationCard
-                  key={g.dest}
-                  origin={current.origin!}
-                  destination={g.dest}
-                  flights={g.fs}
-                />
-              ))}
-            </div>
-          )}
+          <DealsExplorer groups={groups} />
         </section>
 
         <div className="mt-10">

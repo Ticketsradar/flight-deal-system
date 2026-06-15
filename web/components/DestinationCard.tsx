@@ -33,10 +33,12 @@ export default function DestinationCard({
   origin,
   destination,
   flights,
+  selectedDays = [],
 }: {
   origin: string;
   destination: string;
   flights: CheapFlight[];
+  selectedDays?: number[];
 }) {
   const info = airportInfo(destination);
   const oInfo = airportInfo(origin);
@@ -132,6 +134,7 @@ export default function DestinationCard({
                 <div className="flex flex-wrap gap-1.5">
                   {sorted
                     .filter((p) => p.price != null && priceTier(p.price, mMin) < 3)
+                    .filter((p) => selectedDays.length === 0 || (stayDays(p) != null && selectedDays.includes(stayDays(p)!)))
                     .map((p, i) => {
                       const c = TIERS[priceTier(p.price!, mMin)];
                     return (
