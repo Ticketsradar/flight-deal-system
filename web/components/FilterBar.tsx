@@ -22,14 +22,28 @@ function Chip({
       onClick={onClick}
       aria-pressed={active}
       className={
-        "px-3 py-1 rounded-full text-sm border transition " +
+        "px-3 py-1.5 rounded-lg text-sm font-medium border transition inline-flex items-center gap-1 " +
         (active
-          ? "bg-emerald-500/30 border-emerald-400 text-emerald-100"
-          : "bg-white/5 border-white/15 text-white/80 hover:bg-white/10")
+          ? "bg-emerald-500 border-emerald-400 text-white shadow-sm"
+          : "bg-white/5 border-white/20 text-white/80 hover:bg-white/10 hover:border-white/40")
       }
     >
+      {active && <span aria-hidden className="text-xs leading-none">✓</span>}
       {children}
     </button>
+  );
+}
+
+function RowLabel({ text, n }: { text: string; n: number }) {
+  return (
+    <span className="text-xs shrink-0 flex items-center gap-1.5 min-w-[4rem]">
+      <span className="opacity-70">{text}</span>
+      {n > 0 && (
+        <span className="bg-emerald-500/25 text-emerald-200 rounded px-1.5 text-[11px] leading-tight">
+          已揀 {n}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -59,7 +73,7 @@ export default function FilterBar({
   return (
     <div className="glass rounded-xl p-3 flex flex-col gap-3 text-sm">
       <div className="flex flex-wrap gap-2 items-center">
-        <span className="opacity-70 text-xs w-14 shrink-0">出發地</span>
+        <RowLabel text="出發地" n={origins.length} />
         {ORIGINS.map((o) => (
           <Chip
             key={o.code}
@@ -72,7 +86,7 @@ export default function FilterBar({
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
-        <span className="opacity-70 text-xs w-14 shrink-0">洲份</span>
+        <RowLabel text="洲份" n={continents.length} />
         {CONTINENTS.map((c) => (
           <Chip
             key={c}
@@ -86,7 +100,7 @@ export default function FilterBar({
 
       {dayOptions.length > 0 && (
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="opacity-70 text-xs w-14 shrink-0">行程日數</span>
+          <RowLabel text="行程日數" n={days.length} />
           {dayOptions.map((d) => (
             <Chip
               key={d}

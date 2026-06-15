@@ -98,6 +98,13 @@ details[open] .dc-caret {
   transform: rotate(180deg);
 }
 
+/* 平機票兩欄 grid:撳開一張卡會佔成行,右邊嗰張保持原樣移落下一行 → 零留白 */
+@media (min-width: 640px) {
+  .deals-grid > details[open] {
+    grid-column: 1 / -1;
+  }
+}
+
 /* 背景慢慢 zoom(Ken Burns):1.12 ↔ 1.0 來回,好慢 */
 @keyframes kenburns {
   from {

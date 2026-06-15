@@ -46,16 +46,16 @@ export default function DealsExplorer({ groups }: { groups: DealGroup[] }) {
           冇符合條件嘅航線,試下放寬篩選。
         </div>
       ) : (
-        <div className="columns-1 sm:columns-2 gap-3">
+        // 兩欄 grid(左右行排序);撳開一張卡會佔成行(見 globals.css .deals-grid),零留白
+        <div className="grid gap-3 sm:grid-cols-2 items-start deals-grid">
           {shown.map((g) => (
-            <div key={`${g.origin}-${g.destination}`} className="mb-3 break-inside-avoid">
-              <DestinationCard
-                origin={g.origin}
-                destination={g.destination}
-                flights={g.flights}
-                selectedDays={days}
-              />
-            </div>
+            <DestinationCard
+              key={`${g.origin}-${g.destination}`}
+              origin={g.origin}
+              destination={g.destination}
+              flights={g.flights}
+              selectedDays={days}
+            />
           ))}
         </div>
       )}

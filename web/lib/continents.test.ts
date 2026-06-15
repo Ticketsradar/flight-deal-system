@@ -4,7 +4,7 @@ import { CONTINENTS, continentOf } from "@/lib/continents";
 
 describe("continents", () => {
   it("has exactly the 4 expected continents", () => {
-    expect(CONTINENTS).toEqual(["亞洲", "歐洲", "北美洲", "大洋洲"]);
+    expect(CONTINENTS).toEqual(["亞洲", "歐洲", "美洲", "大洋洲"]);
   });
 
   it("maps every airport in AIRPORTS to one of the 4 continents", () => {
@@ -19,8 +19,8 @@ describe("continents", () => {
     expect(continentOf("MLE")).toBe("亞洲"); // 馬累
     expect(continentOf("NRT")).toBe("亞洲"); // 東京
     expect(continentOf("LHR")).toBe("歐洲"); // 倫敦
-    expect(continentOf("JFK")).toBe("北美洲"); // 紐約
-    expect(continentOf("YVR")).toBe("北美洲"); // 溫哥華
+    expect(continentOf("JFK")).toBe("美洲"); // 紐約
+    expect(continentOf("YVR")).toBe("美洲"); // 溫哥華
     expect(continentOf("SYD")).toBe("大洋洲"); // 悉尼
     expect(continentOf("AKL")).toBe("大洋洲"); // 奧克蘭
   });
