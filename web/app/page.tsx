@@ -59,6 +59,9 @@ export default async function Page() {
       return !isStale(freshest, now);
     });
 
+  // 合併視圖一個目的地一張卡 → 顯示「個目的地」數(唯一目的地),唔係 origin×目的地 條數
+  const destCount = new Set(groups.map((g) => g.destination)).size;
+
   return (
     <>
       <BackgroundSlideshow />
@@ -72,7 +75,7 @@ export default async function Page() {
         <section className="mt-2">
           <h2 className="text-2xl font-bold mb-3">
             🚨 錯價雷達{" "}
-            <span className="text-sm font-normal opacity-60">({fares.length})</span>
+            <span className="text-sm font-normal opacity-60">(仍在開發中)</span>
           </h2>
           {fares.length === 0 ? (
             <div className="glass rounded-xl p-4 opacity-80 text-sm">
@@ -91,7 +94,7 @@ export default async function Page() {
         <section className="mt-9">
           <h2 className="text-2xl font-bold mb-1">
             💸 平機票{" "}
-            <span className="text-sm font-normal opacity-60">({groups.length} 條航線)</span>
+            <span className="text-sm font-normal opacity-60">({destCount} 個目的地)</span>
           </h2>
           <p className="text-xs opacity-60 mb-3">撳目的地展開 → 睇晒每個月最平價,撳邊個月跳去嗰月 Google Flights</p>
 

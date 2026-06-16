@@ -2,7 +2,7 @@ import type { CheapFlight, Period } from "@/lib/types";
 import { type Continent } from "@/lib/continents";
 import { flatPeriods, stayDays } from "@/lib/card-helpers";
 
-export const STALE_DAYS = 2; // 數據舊過咁多日就當過時,隱藏。每日 cron → 健康 route ≤1 日;≥2 日 = 連續幾晚失敗(可調)
+export const STALE_DAYS = 3; // 數據舊過咁多日就當過時,前端隱藏 + 後端(upload)會刪走(同一閾值)
 
 export interface DealGroup {
   origin: string;
