@@ -1,0 +1,63 @@
+# Stream A — 補掃(熱門/稀疏 route 溫柔重掃,Batch B #1)
+# ============================================================
+# 主掃(scan.yml,18:00 UTC,workers=2 全量)會畀 Google 封到最紅嘅 route(東京/新加坡)
+# 攞唔到數據 → 嗰啲 route 喺 Supabase 一直稀疏/過時。
+# 呢個補掃 pass 喺主掃之後 12 個鐘(06:00 UTC)用一批「新 IP」溫柔重試:
+#   scanner.py --refill 會自己問 db.sparse_routes() 揾出 periods 太少 / scanned_at 太舊嘅 route,
+#   只掃嗰啲,而且 workers=1 + delay ×2(對單一 shard IP 嘅請求率更低)→ 博繞過封鎖。
+#   --budget 封頂,sparsest 排頭,跑唔晒就下次再嚟(逐日 cycle)。
+#
+# ⚠️ 老實:Google 照封,呢個 pass 幫到啲但唔保證東京一定齊。要 100% 齊就要付費 live API
+#   (SearchApi.io google_flights_calendar),留待將來。
+# DAILY-03 容錯:scanner 同 upload 拆兩 step,upload 用 if: always()。
+
+name: Stream A — 補掃稀疏/過時 route(溫柔重掃)
+
+on:
+  schedule:
+    - cron: "0 6 * * *"  # 每日 06:00 UTC = 14:00 香港(主掃後約 12 個鐘,畀 IP 信譽冷卻)
+  workflow_dispatch: {}
+
+# 同主掃分開嘅 concurrency group(唔好同 scan-daily 互相阻),讓舊嘅跑完
+concurrency:
+  group: scan-refill
+  cancel-in-progress: false
+
+jobs:
+  refill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false  # 一片爆唔好拖死其他片
+      max-parallel: 4
+      matrix:
+        k: [0, 1, 2, 3]  # 4 片(各一個 runner IP),每片溫柔掃 1/4 稀疏 route
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: 裝依賴
+        run: uv sync
+
+      - name: 裝 Playwright chromium(+系統庫)
+        run: uv run playwright install --with-deps chromium
+
+      - name: 補掃分片 ${{ matrix.k }}/4(--refill,溫柔 workers=1 + delay×2,browser 後備)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          uv run python scanner.py \
+            --refill \
+            --slice ${{ matrix.k }}/4 \
+            --grid \
+            --grid-step 3 \
+            --budget 600
+
+      # DAILY-03:scan 超時/失敗都要跑 upload,確保補到嘅數據出街
+      - name: 上傳已完成部分(即使掃描失敗)
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: uv run python upload.py

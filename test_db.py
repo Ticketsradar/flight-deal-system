@@ -171,6 +171,33 @@ def main() -> None:
     print(("✅" if cond else "❌"), "stale_routes() unconfigured → []:", result)
     ok = ok and cond
 
+    # ── Batch B: _order_sparse + sparse_routes(補掃選擇器)──────────────
+    import datetime as _dt
+    NOW = _dt.datetime(2026, 6, 15, tzinfo=_dt.timezone.utc)
+    sparse_rows = [
+        {"origin": "HKG", "destination": "NRT", "scanned_at": "2026-06-10T00:00:00+00:00", "periods": []},
+        {"origin": "HKG", "destination": "NRT", "scanned_at": "2026-06-10T00:00:00+00:00", "periods": []},
+        {"origin": "HKG", "destination": "FUK", "scanned_at": "2026-06-15T00:00:00+00:00", "periods": list(range(10))},
+        {"origin": "HKG", "destination": "FUK", "scanned_at": "2026-06-15T00:00:00+00:00", "periods": list(range(10))},
+        {"origin": "HKG", "destination": "SIN", "scanned_at": "2026-06-15T00:00:00+00:00", "periods": [1, 2, 3, 4]},
+    ]
+    sp = db._order_sparse(sparse_rows, min_periods=5, stale_days=3, now=NOW)
+    keys = [r["destination"] for r in sp]
+    # FUK(20 periods, 今日)唔 sparse;NRT(0, 太舊)+ SIN(4)係 sparse;NRT 比 SIN 排前(periods 少)
+    cond = (keys == ["NRT", "SIN"])
+    print(("✅" if cond else "❌"), "_order_sparse: sparse(少 periods/太舊)先,sparsest 排頭:", keys)
+    ok = ok and cond
+
+    cond = all(("origin" in r and "destination" in r and "periods" in r) for r in sp)
+    print(("✅" if cond else "❌"), "_order_sparse keys: origin/destination/periods present")
+    ok = ok and cond
+
+    # sparse_routes() 未配置 → [](no-op 安全)
+    result = db.sparse_routes(c={"url": "", "key": ""})
+    cond = result == []
+    print(("✅" if cond else "❌"), "sparse_routes() unconfigured → []:", result)
+    ok = ok and cond
+
     print()
     print("🎉 db 純邏輯測試通過" if ok else "⚠️ db 測試有失敗")
     sys.exit(0 if ok else 1)

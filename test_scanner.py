@@ -24,7 +24,7 @@ from __future__ import annotations
 import datetime as dt
 import sys
 import threading
-from scanner import refine_period_lengths, MIN_NIGHTS, MAX_NIGHTS, deep_link, reorder_stale, budget_reached
+from scanner import refine_period_lengths, MIN_NIGHTS, MAX_NIGHTS, deep_link, reorder_stale, budget_reached, filter_to_sparse
 from scanner import ThreadLocalBrowsers, apply_query_stats, run_routes_parallel
 
 PASS_COUNT = 0
@@ -584,6 +584,30 @@ def test_13_run_routes_parallel():
 
 
 # ─────────────────────────────────────────────────────────────────
+# Test 14 — filter_to_sparse:只保留 sparse route,按 sparse_keys 次序(補掃用)
+# ─────────────────────────────────────────────────────────────────
+def test_14_filter_to_sparse():
+    def _route(o, d):
+        return {"origin": o, "dest": d, "region": "t",
+                "origin_name": o, "dest_name": d, "stay_nights": 7}
+
+    routes = [_route("HKG", "NRT"), _route("HKG", "FUK"),
+              _route("HKG", "SIN"), _route("SZX", "NRT")]
+    sparse_keys = ["HKG-SIN", "HKG-NRT"]  # sparsest 先(db.sparse_routes 已排好)
+    out = filter_to_sparse(routes, sparse_keys)
+    keys = [f"{r['origin']}-{r['dest']}" for r in out]
+    if keys == ["HKG-SIN", "HKG-NRT"]:  # 只留 sparse,按 sparse 次序;FUK/SZX-NRT 唔掃
+        ok("test_14_filter_to_sparse (只留 sparse + 跟次序)")
+    else:
+        fail("test_14_filter_to_sparse", f"期望 ['HKG-SIN','HKG-NRT'],得到 {keys}")
+
+    if filter_to_sparse(routes, []) == []:
+        ok("test_14_filter_to_sparse empty sparse_keys → []")
+    else:
+        fail("test_14_filter_to_sparse empty", "空 sparse_keys 應回 []")
+
+
+# ─────────────────────────────────────────────────────────────────
 # Run all tests
 # ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
@@ -601,6 +625,7 @@ if __name__ == "__main__":
     test_11_threadlocal_browsers_isolation()
     test_12_apply_query_stats_concurrent()
     test_13_run_routes_parallel()
+    test_14_filter_to_sparse()
     print()
     print(f"Results: {PASS_COUNT} passed, {FAIL_COUNT} failed")
     sys.exit(0 if FAIL_COUNT == 0 else 1)

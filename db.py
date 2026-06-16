@@ -221,6 +221,67 @@ def stale_routes(limit: int | None = None, c: dict | None = None) -> list[dict]:
     return ordered
 
 
+def _is_stale(last: str | None, stale_days: int, now: dt.datetime) -> bool:
+    """scanned_at(可能 naive 或帶 +00:00)舊過 stale_days 日就當過時;null = 過時。"""
+    if not last:
+        return True
+    try:
+        d = dt.datetime.fromisoformat(last)
+    except Exception:  # noqa: BLE001
+        return True
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=dt.timezone.utc)
+    return (now - d).days >= stale_days
+
+
+def _order_sparse(rows: list[dict], min_periods: int = 5, stale_days: int = 3,
+                  now: dt.datetime | None = None) -> list[dict]:
+    """純本地:把 cheap_flights 行摺疊成每 route 一行,計總 periods 數 + 最新 scanned_at。
+    回「sparse」嘅 route(總 periods < min_periods,或 太舊/從未掃),sparsest 排頭
+    (periods 少優先,再按 scanned_at 舊→新,null 最前)。
+    回 [{"origin","destination","periods","last"}, ...]。
+    """
+    now = now or dt.datetime.now(dt.timezone.utc)
+    agg: dict[tuple, dict] = {}
+    for r in rows:
+        key = (r.get("origin"), r.get("destination"))
+        a = agg.setdefault(key, {"periods": 0, "last": None})
+        ps = r.get("periods")
+        a["periods"] += len(ps) if isinstance(ps, list) else 0
+        ts = r.get("scanned_at")
+        if ts is not None and (a["last"] is None or ts > a["last"]):
+            a["last"] = ts
+
+    out = []
+    for (o, dest), a in agg.items():
+        if a["periods"] < min_periods or _is_stale(a["last"], stale_days, now):
+            out.append({"origin": o, "destination": dest,
+                        "periods": a["periods"], "last": a["last"]})
+
+    def _sort_key(item):
+        last = item["last"]
+        last_key = (0, "") if last is None else (1, last)
+        return (item["periods"], last_key)
+
+    out.sort(key=_sort_key)
+    return out
+
+
+def sparse_routes(min_periods: int = 5, stale_days: int = 3,
+                  limit: int | None = None, c: dict | None = None) -> list[dict]:
+    """讀 cheap_flights,回「補掃」應該優先重掃嘅 route(periods 太少 或 太舊),
+    sparsest 排頭。未配置 Supabase → [](no-op 安全)。limit:截頭幾多條。
+    """
+    c = c or cfg()
+    if not configured(c):
+        return []
+    rows = select("cheap_flights", "select=origin,destination,scanned_at,periods", c=c)
+    ordered = _order_sparse(rows, min_periods=min_periods, stale_days=stale_days)
+    if limit is not None:
+        ordered = ordered[:limit]
+    return ordered
+
+
 def delete(table: str, params: str, c: dict | None = None, client=None) -> bool:
     """DELETE 符合 PostgREST filter 嘅行(例:source_url=eq.xxx)。主要畀自測清手尾用。"""
     c = c or cfg()
