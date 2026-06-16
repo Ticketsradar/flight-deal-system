@@ -220,6 +220,32 @@ def main() -> None:
     print(("✅" if cond else "❌"), "_order_sparse: tie 穩定排序 (origin,destination):", tie)
     ok = ok and cond
 
+    # delete_stale_cheap_flights:cutoff 格式(Z 結尾、無 '+')+ 未配置 no-op + DELETE filter 正確
+    cutoff = db.stale_cutoff_iso(3, now=NOW)  # NOW=2026-06-15 → 3 日前 = 2026-06-12
+    cond = (cutoff == "2026-06-12T00:00:00Z")
+    print(("✅" if cond else "❌"), "stale_cutoff_iso(3):", cutoff)
+    ok = ok and cond
+
+    cond = (db.delete_stale_cheap_flights(c={"url": "", "key": ""}) is False)
+    print(("✅" if cond else "❌"), "delete_stale_cheap_flights 未配置 → False(no-op)")
+    ok = ok and cond
+
+    captured = {}
+
+    class _Resp:
+        def raise_for_status(self):
+            pass
+
+    def _fake_del(url, headers=None, timeout=None):
+        captured["url"] = url
+        return _Resp()
+
+    db.delete_stale_cheap_flights(stale_days=3, c={"url": "https://x.supabase.co", "key": "k"},
+                                  client=_fake_del, now=NOW)
+    cond = ("cheap_flights?scanned_at=lt.2026-06-12T00:00:00Z" in captured.get("url", ""))
+    print(("✅" if cond else "❌"), "delete_stale_cheap_flights DELETE filter:", captured.get("url", "")[-55:])
+    ok = ok and cond
+
     print()
     print("🎉 db 純邏輯測試通過" if ok else "⚠️ db 測試有失敗")
     sys.exit(0 if ok else 1)

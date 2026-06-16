@@ -335,6 +335,22 @@ def delete(table: str, params: str, c: dict | None = None, client=None) -> bool:
         return False
 
 
+def stale_cutoff_iso(stale_days: int, now: dt.datetime | None = None) -> str:
+    """scanned_at 過時界線(UTC,Z 結尾;唔用 +00:00 因為 '+' 喺 URL query 會變空格)。"""
+    now = now or dt.datetime.now(dt.timezone.utc)
+    return (now - dt.timedelta(days=stale_days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def delete_stale_cheap_flights(stale_days: int = 3, c: dict | None = None,
+                               client=None, now: dt.datetime | None = None) -> bool:
+    """刪走 scanned_at 舊過 stale_days 日嘅 cheap_flights 行。
+    喺新數據 upsert 之後先跑 → 啱啱掃到嘅 route(scanned_at 新)唔會中招,
+    只清走連續幾日冇刷到嘅過時 route。未配置 → False(no-op 安全)。
+    """
+    cutoff = stale_cutoff_iso(stale_days, now)
+    return delete("cheap_flights", f"scanned_at=lt.{cutoff}", c=c, client=client)
+
+
 def push_error_fares(deals: list[dict], c: dict | None = None, client=None) -> int:
     n = upsert("error_fares", [error_fare_row(d) for d in deals], "source_url",
                c=c, client=client)

@@ -45,6 +45,11 @@ def main() -> int:
         ts = scan.get("generated_at") or scan.get("scan_date", "")
         db.set_meta("last_refill_at" if refill else "last_updated_stream_a", ts)
         log(f"Stream A {Path(scan_path).name}{'(refill)' if refill else ''}: cheap_flights {n_cheap} 行")
+        # 有新數據先清過時(>3 日未刷)→ 過時 route 由網站+DB 一齊消失;
+        # n_cheap>0 守住:萬一一次全失敗(冇新數據)就唔好清空成個庫
+        if n_cheap > 0:
+            db.delete_stale_cheap_flights(stale_days=3)
+            log("已刪走 scanned_at 舊過 3 日嘅過時 route(網站 + DB)")
     else:
         log("冇 scan_*.json — 跳過 Stream A")
 
