@@ -261,7 +261,9 @@ def _order_sparse(rows: list[dict], min_periods: int = 5, stale_days: int = 3,
     def _sort_key(item):
         last = item["last"]
         last_key = (0, "") if last is None else (1, last)
-        return (item["periods"], last_key)
+        # (origin,destination)穩定 tie-breaker → 多 shard 各自 query 都得出同一個次序,
+        # --slice K/N 先至 partition 得啱(唔會漏掃 / 重掃)
+        return (item["periods"], last_key, item["origin"] or "", item["destination"] or "")
 
     out.sort(key=_sort_key)
     return out
@@ -275,11 +277,46 @@ def sparse_routes(min_periods: int = 5, stale_days: int = 3,
     c = c or cfg()
     if not configured(c):
         return []
-    rows = select("cheap_flights", "select=origin,destination,scanned_at,periods", c=c)
+    # 明確 order + 高 limit:PostgREST 預設 db-max-rows=1000,而 cheap_flights 已 >1000 行;
+    # 唔加會被靜靜截斷,令補掃選錯/漏 route。order 亦令多 shard 攞到同一份(配合穩定排序)。
+    rows = select("cheap_flights",
+                  "select=origin,destination,scanned_at,periods"
+                  "&order=origin.asc,destination.asc&limit=100000", c=c)
     ordered = _order_sparse(rows, min_periods=min_periods, stale_days=stale_days)
     if limit is not None:
         ordered = ordered[:limit]
     return ordered
+
+
+def _periods_count(row: dict) -> int:
+    ps = row.get("periods")
+    return len(ps) if isinstance(ps, list) else 0
+
+
+def filter_non_degrading(rows: list[dict], existing: dict) -> list[dict]:
+    """補掃保護(防退步):只保留唔會令數據變差嘅行 —— 新 periods 數 >= 現有(或現有冇紀錄)。
+    補掃專打畀 Google 封到嘅熱門 route,有時只攞到部分日子;若該月新 periods 比庫存少,
+    upsert(整行覆寫)會反而 net-remove 覆蓋,所以呢度擋住。
+    existing: {(origin,destination,month): 現有 periods 數}。Pure function。
+    """
+    kept = []
+    for r in rows:
+        key = (r.get("origin"), r.get("destination"), r.get("month"))
+        if _periods_count(r) >= existing.get(key, 0):
+            kept.append(r)
+    return kept
+
+
+def existing_period_counts(c: dict | None = None) -> dict:
+    """讀 cheap_flights 現有每 (origin,destination,month) 嘅 periods 數。未配置 → {}。"""
+    c = c or cfg()
+    if not configured(c):
+        return {}
+    rows = select("cheap_flights",
+                  "select=origin,destination,month,periods"
+                  "&order=origin.asc,destination.asc&limit=100000", c=c)
+    return {(r.get("origin"), r.get("destination"), r.get("month")): _periods_count(r)
+            for r in rows}
 
 
 def delete(table: str, params: str, c: dict | None = None, client=None) -> bool:
@@ -306,9 +343,15 @@ def push_error_fares(deals: list[dict], c: dict | None = None, client=None) -> i
     return n
 
 
-def push_cheap_flights(scan_doc: dict, c: dict | None = None, client=None) -> int:
-    n = upsert("cheap_flights", cheap_flight_rows(scan_doc), "origin,destination,month",
-               c=c, client=client)
+def push_cheap_flights(scan_doc: dict, c: dict | None = None, client=None,
+                       guard_no_degrade: bool = False) -> int:
+    rows = cheap_flight_rows(scan_doc)
+    if guard_no_degrade:  # 補掃:唔好用較少 periods 蓋走庫存較豐富嘅月份
+        before = len(rows)
+        rows = filter_non_degrading(rows, existing_period_counts(c))
+        if before != len(rows):
+            log(f"補掃保護:跳過 {before - len(rows)} 個會令 periods 變少嘅月份(防退步)")
+    n = upsert("cheap_flights", rows, "origin,destination,month", c=c, client=client)
     if n:
         log(f"cheap_flights upsert {n} 行")
     return n

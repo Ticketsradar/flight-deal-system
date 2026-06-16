@@ -10,6 +10,9 @@
 # ⚠️ 老實:Google 照封,呢個 pass 幫到啲但唔保證東京一定齊。要 100% 齊就要付費 live API
 #   (SearchApi.io google_flights_calendar),留待將來。
 # DAILY-03 容錯:scanner 同 upload 拆兩 step,upload 用 if: always()。
+# 註:每片各自 query sparse_routes()(已加穩定排序 → 同一份 list),--slice K/4 partition;
+#   唯一邊界情況係某 route scanned_at 啱啱喺 stale_days 界線,各片 now() 差幾分鐘可能分類唔同
+#   → 該 route 偶爾畀 0 或 2 片掃(upsert 冪等,無害,下次 run 自然修正)。staleness 以「日」為粒度,極罕。
 
 name: Stream A — 補掃稀疏/過時 route(溫柔重掃)
 

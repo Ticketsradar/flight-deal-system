@@ -198,6 +198,28 @@ def main() -> None:
     print(("✅" if cond else "❌"), "sparse_routes() unconfigured → []:", result)
     ok = ok and cond
 
+    # filter_non_degrading(防退步):新 periods < 現有 → 丟;>= 或 現有冇 → 留
+    new_rows = [
+        {"origin": "HKG", "destination": "NRT", "month": "2026-07", "periods": [1, 2, 3]},        # 3 < 10 → 丟
+        {"origin": "HKG", "destination": "NRT", "month": "2026-08", "periods": list(range(11))},  # 11 >= 5 → 留
+        {"origin": "HKG", "destination": "SIN", "month": "2026-06", "periods": [1, 2]},           # 現有冇 → 留
+    ]
+    existing = {("HKG", "NRT", "2026-07"): 10, ("HKG", "NRT", "2026-08"): 5}
+    kept_keys = [(r["destination"], r["month"]) for r in db.filter_non_degrading(new_rows, existing)]
+    cond = (kept_keys == [("NRT", "2026-08"), ("SIN", "2026-06")])
+    print(("✅" if cond else "❌"), "filter_non_degrading: 丟退步月份、留改善/新月份:", kept_keys)
+    ok = ok and cond
+
+    # _order_sparse:同 periods 同 last 時用 (origin,destination) 穩定排序(多 shard 一致)
+    tie_rows = [
+        {"origin": "HKG", "destination": "BBB", "scanned_at": None, "periods": []},
+        {"origin": "HKG", "destination": "AAA", "scanned_at": None, "periods": []},
+    ]
+    tie = [r["destination"] for r in db._order_sparse(tie_rows, min_periods=5, stale_days=3, now=NOW)]
+    cond = (tie == ["AAA", "BBB"])
+    print(("✅" if cond else "❌"), "_order_sparse: tie 穩定排序 (origin,destination):", tie)
+    ok = ok and cond
+
     print()
     print("🎉 db 純邏輯測試通過" if ok else "⚠️ db 測試有失敗")
     sys.exit(0 if ok else 1)
