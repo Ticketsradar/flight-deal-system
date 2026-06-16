@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import DestinationCard from "@/components/DestinationCard";
 import CompareCard from "@/components/CompareCard";
 import FilterBar from "@/components/FilterBar";
+import { ORIGINS } from "@/lib/airports";
 import {
   applyFilters,
   availableDays,
@@ -11,6 +12,9 @@ import {
   splitColumns,
   type DealGroup,
 } from "@/lib/filtering";
+
+// 預設 3 個出發地(香港/深圳/廣州)全開 → 預設就係合併比價 view
+const ALL_ORIGINS = ORIGINS.map((o) => o.code);
 
 // 手機 1 欄 / ≥640px 2 欄。預設 1(mobile-first:SSR + 手機唔閃,desktop 上嚟先升 2 欄)
 function useColumnCount(): number {
@@ -52,7 +56,7 @@ function Masonry<T>({
 }
 
 export default function DealsExplorer({ groups }: { groups: DealGroup[] }) {
-  const [origins, setOrigins] = useState<string[]>([]);
+  const [origins, setOrigins] = useState<string[]>(ALL_ORIGINS);
   const [continents, setContinents] = useState<string[]>([]);
   const [days, setDays] = useState<number[]>([]);
   const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
@@ -71,7 +75,7 @@ export default function DealsExplorer({ groups }: { groups: DealGroup[] }) {
   );
 
   const reset = () => {
-    setOrigins([]);
+    setOrigins(ALL_ORIGINS); // 重設 = 返預設(3 個出發地全開)
     setContinents([]);
     setDays([]);
     setMaxPrice(undefined);
