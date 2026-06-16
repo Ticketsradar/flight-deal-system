@@ -34,8 +34,16 @@ function Chip({
   );
 }
 
-function RowLabel({ text }: { text: string }) {
-  return <span className="opacity-70 text-xs shrink-0 min-w-[4rem]">{text}</span>;
+// 一行 = 固定闊度 label 欄 + 右邊獨立 wrap 區。
+// label 同 chip 分欄,chip 換行時喺自己個區 wrap(對齊第一個 chip 下面),
+// 唔會 wrap 返 label 底下 → 7–12日、預算輸入框全部左邊對齊。
+function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex gap-2">
+      <span className="opacity-70 text-xs shrink-0 w-16 pt-1.5">{label}</span>
+      <div className="flex flex-wrap gap-2 items-center flex-1 min-w-0">{children}</div>
+    </div>
+  );
 }
 
 export default function FilterBar({
@@ -63,8 +71,7 @@ export default function FilterBar({
 }) {
   return (
     <div className="glass rounded-xl p-3 flex flex-col gap-3 text-sm">
-      <div className="flex flex-wrap gap-2 items-center">
-        <RowLabel text="出發地" />
+      <FilterRow label="出發地">
         {ORIGINS.map((o) => (
           <Chip
             key={o.code}
@@ -74,10 +81,9 @@ export default function FilterBar({
             {o.name}
           </Chip>
         ))}
-      </div>
+      </FilterRow>
 
-      <div className="flex flex-wrap gap-2 items-center">
-        <RowLabel text="洲份" />
+      <FilterRow label="洲份">
         {CONTINENTS.map((c) => (
           <Chip
             key={c}
@@ -87,11 +93,10 @@ export default function FilterBar({
             {c}
           </Chip>
         ))}
-      </div>
+      </FilterRow>
 
       {dayOptions.length > 0 && (
-        <div className="flex flex-wrap gap-2 items-center">
-          <RowLabel text="行程日數" />
+        <FilterRow label="行程日數">
           {dayOptions.map((d) => (
             <Chip
               key={d}
@@ -101,25 +106,23 @@ export default function FilterBar({
               {d}日
             </Chip>
           ))}
-        </div>
+        </FilterRow>
       )}
 
-      <div className="flex flex-wrap gap-3 items-center">
-        <label className="flex items-center gap-2">
-          <span className="opacity-70 text-xs">預算上限 (HKD)</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="例:2000"
-            value={maxPrice ?? ""}
-            onChange={(e) => setMaxPrice(e.target.value ? Number(e.target.value) : undefined)}
-            className="filter-input w-28"
-          />
-        </label>
+      <FilterRow label="預算上限">
+        <input
+          type="number"
+          inputMode="numeric"
+          placeholder="例:2000 HKD"
+          value={maxPrice ?? ""}
+          onChange={(e) => setMaxPrice(e.target.value ? Number(e.target.value) : undefined)}
+          className="filter-input w-28"
+          aria-label="預算上限 (HKD)"
+        />
         <button type="button" onClick={onReset} className="filter-reset">
           重設
         </button>
-      </div>
+      </FilterRow>
     </div>
   );
 }
