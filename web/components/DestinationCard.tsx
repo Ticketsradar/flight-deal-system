@@ -1,94 +1,24 @@
 import { airportInfo } from "@/lib/airports";
 import { freshnessLabel } from "@/lib/freshness";
-import type { CheapFlight, Period } from "@/lib/types";
-
-function monthLabel(m: string): string {
-  return m ? `${parseInt(m.split("-")[1], 10)}月` : "";
-}
-function dayLabel(d: string | null): string {
-  return d ? `${parseInt(d.split("-")[2], 10)}號` : "?";
-}
-function stayDays(p: Period): number | null {
-  if (p.days != null) return p.days;
-  if (!p.depart || !p.return) return null;
-  return Math.round((new Date(p.return).getTime() - new Date(p.depart).getTime()) / 86400000);
-}
-
-// 同一個月內,按價分層上色:最平(綠)/ 次平(青)/ 第三(黃)/ 較貴(灰)
-const TIERS = [
-  { text: "#34d399", bg: "rgba(16,185,129,0.16)", bd: "rgba(16,185,129,0.55)" },
-  { text: "#5eead4", bg: "rgba(20,184,166,0.12)", bd: "rgba(20,184,166,0.42)" },
-  { text: "#fcd34d", bg: "rgba(245,158,11,0.12)", bd: "rgba(245,158,11,0.4)" },
-  { text: "#94a3b8", bg: "rgba(255,255,255,0.05)", bd: "rgba(255,255,255,0.12)" },
-];
-function priceTier(price: number, monthMin: number): number {
-  if (!isFinite(monthMin) || monthMin <= 0) return 3;
-  if (price <= monthMin * 1.04) return 0;
-  if (price <= monthMin * 1.12) return 1;
-  if (price <= monthMin * 1.22) return 2;
-  return 3;
-}
+import { cardStats } from "@/lib/card-helpers";
+import MonthGrid, { TierLegend } from "@/components/MonthGrid";
+import type { CheapFlight } from "@/lib/types";
 
 export default function DestinationCard({
   origin,
   destination,
   flights,
+  selectedDays = [],
 }: {
   origin: string;
   destination: string;
   flights: CheapFlight[];
+  selectedDays?: number[];
 }) {
   const info = airportInfo(destination);
   const oInfo = airportInfo(origin);
   const cur = flights[0]?.currency ?? "HKD";
-
-  const all: { month: string; p: Period }[] = [];
-  for (const f of flights) {
-    const ps =
-      f.periods && f.periods.length
-        ? f.periods
-        : [
-            {
-              depart: f.depart_date,
-              return: f.return_date,
-              price: f.price_hkd,
-              airline: f.airline,
-              google_flights: f.gflights_url,
-            },
-          ];
-    for (const p of ps) all.push({ month: f.month ?? "", p });
-  }
-
-  const prices = all.map((x) => x.p.price ?? Infinity).filter((p) => p < Infinity);
-  const min = prices.length ? Math.min(...prices) : 0;
-  const cheapCount = all.filter((x) => (x.p.price ?? Infinity) <= min * 1.04).length;
-
-  // 計所有 period 嘅行程日數,取 min/max 顯示範圍
-  const allDays = all.map((x) => stayDays(x.p)).filter((d): d is number => d != null);
-  const minStay = allDays.length ? Math.min(...allDays) : null;
-  const maxStay = allDays.length ? Math.max(...allDays) : null;
-  const stayRange =
-    minStay != null && maxStay != null
-      ? minStay === maxStay
-        ? `${minStay}日`
-        : `${minStay}–${maxStay}日`
-      : null;
-
-  // 計呢個目的地最新一次掃描時間(用於顯示「更新於 N 日前」)
-  const lastScan =
-    flights
-      .map((f) => f.scanned_at)
-      .filter(Boolean)
-      .sort()
-      .at(-1) ?? null;
-
-  const byMonth = new Map<string, Period[]>();
-  for (const { month, p } of all) {
-    const arr = byMonth.get(month) ?? [];
-    arr.push(p);
-    byMonth.set(month, arr);
-  }
-  const monthGroups = [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const { min, cheapCount, stayRange, lastScan } = cardStats(flights, selectedDays);
 
   return (
     <details className="glass-card rounded-2xl overflow-hidden">
@@ -115,53 +45,8 @@ export default function DestinationCard({
       </summary>
 
       <div className="px-4 pb-4 pt-1">
-        <div className="text-xs opacity-70 mb-2">
-          每月只列平價日:<span style={{ color: TIERS[0].text }}>綠最平</span> ·{" "}
-          <span style={{ color: TIERS[1].text }}>青次平</span> ·{" "}
-          <span style={{ color: TIERS[2].text }}>黃第三平</span> — 撳跳該日 Google Flights
-        </div>
-        <div className="flex flex-col gap-2">
-          {monthGroups.map(([month, ps]) => {
-            const sorted = ps
-              .slice()
-              .sort((a, b) => (a.depart ?? "").localeCompare(b.depart ?? ""));
-            const mMin = Math.min(...sorted.map((p) => p.price ?? Infinity));
-            return (
-              <div key={month} className="flex items-start gap-2">
-                <div className="text-xs opacity-70 w-9 shrink-0 pt-2">{monthLabel(month)}</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {sorted
-                    .filter((p) => p.price != null && priceTier(p.price, mMin) < 3)
-                    .map((p, i) => {
-                      const c = TIERS[priceTier(p.price!, mMin)];
-                    return (
-                      <a
-                        key={i}
-                        href={p.google_flights ?? "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={`${p.depart} → ${p.return} · ${cur} ${p.price}`}
-                        className="px-2 py-1 rounded-lg text-center leading-tight"
-                        style={{ background: c.bg, border: `1px solid ${c.bd}` }}
-                      >
-                        <div className="text-sm font-semibold" style={{ color: c.text }}>
-                          {dayLabel(p.depart)}
-                          <span className="text-[10px] font-normal opacity-70">
-                            {" "}
-                            {stayDays(p) ?? "?"}日
-                          </span>
-                        </div>
-                        <div className="text-[10px]" style={{ color: c.text, opacity: 0.85 }}>
-                          ${p.price ?? "—"}
-                        </div>
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <TierLegend />
+        <MonthGrid flights={flights} selectedDays={selectedDays} currency={cur} />
       </div>
     </details>
   );

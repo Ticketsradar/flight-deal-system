@@ -71,7 +71,7 @@ GitHub Actions cron(每日)
 - [x] **Phase 2.2 — Telegram 即時推送** ✅ 2026-06-13(`notifier.py`:format_deal(HTML 訊息:航線+傳聞/重查價+日期+狀態+airline+Google Flights/Trip.com/原文 三連結+免責)、send_message(httpx POST `sendMessage`,retry/429)、notify_verified(政策路由:live 推 owner+channel / unverified 推 owner / dead 唔推);駁入 `run_master.py`,加 `--no-notify`;6 項離線測試綠;**真機 live send 通過 — user 確認部電話收到測試卡片**。bot=@hkgcheapflightscannerbot,channel 暫留空只推 owner)
 - [x] **Phase 2.5 — 接 Supabase** ✅ 2026-06-13(`schema.sql`(cheap_flights/error_fares/meta 三枱 + RLS 公開只讀)、`db.py`(PostgREST httpx upsert/select/delete + 行映射,未配置 no-op)、`upload.py`(純 code 合併器:最新 scan_*.json→cheap_flights、verified_*.json 三 bucket→error_fares + set_meta);**live 驗證:1057 平機票 + 1 錯價真寫入 Supabase 並讀返**;test_db / test_upload 全綠。Supabase project ref=vluyordxtflpqebzapgr;keys 喺 `.env`(SUPABASE_URL/PUBLISHABLE/SECRET))
 - [~] **Phase 3 — Next.js 網站**:✅ 起好(`web/`,Next 16 + React 19 + Tailwind v4),❌ 未 deploy。喺 branch `phase-3-website`。詳見下面「網站現狀」。
-- [x] **Phase 4 — GitHub Actions cron** ✅ 2026-06-14:雲端 daily 全量掃描(`scan.yml`,**20 shard,每日掃晒全部 171 條**,cron 18:00 UTC = HK 02:00)已上線。**關鍵發現**:純 HTTP 喺 GitHub 共用 Azure IP 畀 Google 軟封鎖(空殼頁,5/6 shard 紅)→ 開 Playwright browser 後備繞到(行 JS,🌐 標記,job 綠)→ **repo 改 public** 攞免費無限 Actions 養活 browser 慢成本。user 揀咗全量每日(~20k query/日,~80 機鐘/日;接近 fair-use 線,要監察)。Secrets 已設、repo 已 public、cron 已 uncomment。原 weekly 安全網因 daily 已全覆蓋而刪走。**淨返 user merge `phase-3-website` PR,cron 先正式生效。** 詳見下面。
+- [x] **Phase 4 — GitHub Actions cron** ✅ 2026-06-14:雲端 daily 全量掃描(`scan.yml`,**20 shard,每日掃晒全部 171 條**,cron 18:00 UTC = HK 02:00)已上線。**關鍵發現**:純 HTTP 喺 GitHub 共用 Azure IP 畀 Google 軟封鎖(空殼頁,5/6 shard 紅)→ 開 Playwright browser 後備繞到(行 JS,🌐 標記,job 綠)→ **repo 改 public** 攞免費無限 Actions 養活 browser 慢成本。user 揀咗全量每日(~20k query/日,~80 機鐘/日;接近 fair-use 線,要監察)。Secrets 已設、repo 已 public、cron 已 uncomment。原 weekly 安全網因 daily 已全覆蓋而刪走。**✅ 2026-06-14 已 merge 落 main(PR #5)+ 量度驗證:main dispatch run #5(workers=2)20 個 shard 全綠、Success、3h47m,數據上咗 Supabase。每日 cron 正式生效(全套 D-OPT,workers=2)。** 詳見下面。
 - [ ] Phase 5 — 小紅書 scout(MediaCrawler + cookie 登入)
 - [ ] Phase 6 — Facebook / Instagram scout(Apify 或半人手,最後先做)
 
@@ -101,7 +101,7 @@ GitHub Actions cron(每日)
 - **用量**:~20k query/日 ≈ ~80 機鐘/日。user 揀咗全量每日(已知接近 fair-use 線)。原 `scan-weekly.yml` 因 daily 已全覆蓋而**刪走**(唔好疊重複 load)。
 - **✅ 封鎖未知數已解**:GitHub 共用 Azure IP **純 HTTP 會畀 Google 軟封鎖**(空殼頁,實測 6 片 5 紅、只收 5 route)。**解法 = Playwright browser 後備**(行 JS 繞到,log 標 🌐,job 變綠)。因 browser 慢、private repo 2000 分鐘/月唔夠,**repo 改咗 public** 攞免費無限 Actions。
 - ⚠️ 殘留風險 + 監察:① 個別 shard 撞「IP 信譽級」死封 → 該片紅(`fail-fast:false`+`if:always` 兜住,唔影響其他片同出街);② GitHub fair-use:若收到警告 email / 經常一堆紅,就調返「每 2–3 日轉一圈」(減 shard + 加返 `--budget`)。
-- **狀態**:已 push 上 `phase-3-website`,**待 user merge PR → cron 喺 main 生效**。
+- **狀態**:✅ 已 merge 落 main(PR #5),cron 生效中(workers=2);run #5 驗證 20/20 shard 全綠。**淨返 Vercel deploy 網站**(go-live 最後一步)。
 
 ### ✅ 已破解(2026-06-14)— 「2-14 日 trip length」唔再係硬牆
 > **更正:下面舊判斷係基於錯誤假設。** 2026-06-14 research 拆解咗參考網站 `flight-deals-web.vercel.app`:佢**根本唔係**做完整 28×13 grid,而係**每個平價出發日只試 ±2 日 return 揀最平**(實際得 4–11 日,唔係真 2–14),數據一樣由 Google Flights 掃。所以**唔使 436k query** — 只需喺現有 `--grid` 揾到嘅平價日加薄薄一層 ±2 return-offset(幾千 query)就抄到。

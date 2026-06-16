@@ -221,6 +221,104 @@ def stale_routes(limit: int | None = None, c: dict | None = None) -> list[dict]:
     return ordered
 
 
+def _is_stale(last: str | None, stale_days: int, now: dt.datetime) -> bool:
+    """scanned_at(可能 naive 或帶 +00:00)舊過 stale_days 日就當過時;null = 過時。"""
+    if not last:
+        return True
+    try:
+        d = dt.datetime.fromisoformat(last)
+    except Exception:  # noqa: BLE001
+        return True
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=dt.timezone.utc)
+    return (now - d).days >= stale_days
+
+
+def _order_sparse(rows: list[dict], min_periods: int = 5, stale_days: int = 3,
+                  now: dt.datetime | None = None) -> list[dict]:
+    """純本地:把 cheap_flights 行摺疊成每 route 一行,計總 periods 數 + 最新 scanned_at。
+    回「sparse」嘅 route(總 periods < min_periods,或 太舊/從未掃),sparsest 排頭
+    (periods 少優先,再按 scanned_at 舊→新,null 最前)。
+    回 [{"origin","destination","periods","last"}, ...]。
+    """
+    now = now or dt.datetime.now(dt.timezone.utc)
+    agg: dict[tuple, dict] = {}
+    for r in rows:
+        key = (r.get("origin"), r.get("destination"))
+        a = agg.setdefault(key, {"periods": 0, "last": None})
+        ps = r.get("periods")
+        a["periods"] += len(ps) if isinstance(ps, list) else 0
+        ts = r.get("scanned_at")
+        if ts is not None and (a["last"] is None or ts > a["last"]):
+            a["last"] = ts
+
+    out = []
+    for (o, dest), a in agg.items():
+        if a["periods"] < min_periods or _is_stale(a["last"], stale_days, now):
+            out.append({"origin": o, "destination": dest,
+                        "periods": a["periods"], "last": a["last"]})
+
+    def _sort_key(item):
+        last = item["last"]
+        last_key = (0, "") if last is None else (1, last)
+        # (origin,destination)穩定 tie-breaker → 多 shard 各自 query 都得出同一個次序,
+        # --slice K/N 先至 partition 得啱(唔會漏掃 / 重掃)
+        return (item["periods"], last_key, item["origin"] or "", item["destination"] or "")
+
+    out.sort(key=_sort_key)
+    return out
+
+
+def sparse_routes(min_periods: int = 5, stale_days: int = 3,
+                  limit: int | None = None, c: dict | None = None) -> list[dict]:
+    """讀 cheap_flights,回「補掃」應該優先重掃嘅 route(periods 太少 或 太舊),
+    sparsest 排頭。未配置 Supabase → [](no-op 安全)。limit:截頭幾多條。
+    """
+    c = c or cfg()
+    if not configured(c):
+        return []
+    # 明確 order + 高 limit:PostgREST 預設 db-max-rows=1000,而 cheap_flights 已 >1000 行;
+    # 唔加會被靜靜截斷,令補掃選錯/漏 route。order 亦令多 shard 攞到同一份(配合穩定排序)。
+    rows = select("cheap_flights",
+                  "select=origin,destination,scanned_at,periods"
+                  "&order=origin.asc,destination.asc&limit=100000", c=c)
+    ordered = _order_sparse(rows, min_periods=min_periods, stale_days=stale_days)
+    if limit is not None:
+        ordered = ordered[:limit]
+    return ordered
+
+
+def _periods_count(row: dict) -> int:
+    ps = row.get("periods")
+    return len(ps) if isinstance(ps, list) else 0
+
+
+def filter_non_degrading(rows: list[dict], existing: dict) -> list[dict]:
+    """補掃保護(防退步):只保留唔會令數據變差嘅行 —— 新 periods 數 >= 現有(或現有冇紀錄)。
+    補掃專打畀 Google 封到嘅熱門 route,有時只攞到部分日子;若該月新 periods 比庫存少,
+    upsert(整行覆寫)會反而 net-remove 覆蓋,所以呢度擋住。
+    existing: {(origin,destination,month): 現有 periods 數}。Pure function。
+    """
+    kept = []
+    for r in rows:
+        key = (r.get("origin"), r.get("destination"), r.get("month"))
+        if _periods_count(r) >= existing.get(key, 0):
+            kept.append(r)
+    return kept
+
+
+def existing_period_counts(c: dict | None = None) -> dict:
+    """讀 cheap_flights 現有每 (origin,destination,month) 嘅 periods 數。未配置 → {}。"""
+    c = c or cfg()
+    if not configured(c):
+        return {}
+    rows = select("cheap_flights",
+                  "select=origin,destination,month,periods"
+                  "&order=origin.asc,destination.asc&limit=100000", c=c)
+    return {(r.get("origin"), r.get("destination"), r.get("month")): _periods_count(r)
+            for r in rows}
+
+
 def delete(table: str, params: str, c: dict | None = None, client=None) -> bool:
     """DELETE 符合 PostgREST filter 嘅行(例:source_url=eq.xxx)。主要畀自測清手尾用。"""
     c = c or cfg()
@@ -245,9 +343,15 @@ def push_error_fares(deals: list[dict], c: dict | None = None, client=None) -> i
     return n
 
 
-def push_cheap_flights(scan_doc: dict, c: dict | None = None, client=None) -> int:
-    n = upsert("cheap_flights", cheap_flight_rows(scan_doc), "origin,destination,month",
-               c=c, client=client)
+def push_cheap_flights(scan_doc: dict, c: dict | None = None, client=None,
+                       guard_no_degrade: bool = False) -> int:
+    rows = cheap_flight_rows(scan_doc)
+    if guard_no_degrade:  # 補掃:唔好用較少 periods 蓋走庫存較豐富嘅月份
+        before = len(rows)
+        rows = filter_non_degrading(rows, existing_period_counts(c))
+        if before != len(rows):
+            log(f"補掃保護:跳過 {before - len(rows)} 個會令 periods 變少嘅月份(防退步)")
+    n = upsert("cheap_flights", rows, "origin,destination,month", c=c, client=client)
     if n:
         log(f"cheap_flights upsert {n} 行")
     return n

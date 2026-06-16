@@ -565,6 +565,17 @@ def reorder_stale(routes: list[dict], stale_keys: list[str]) -> list[dict]:
     return never_scanned + in_db
 
 
+def filter_to_sparse(routes: list, sparse_keys: list[str]) -> list:
+    """補掃(--refill)用:只保留喺 sparse_keys 裏嘅 route,並按 sparse_keys 次序排
+    (db.sparse_routes() 已將 sparsest 排頭)。唔在 sparse_keys 嘅 route 直接丟走。
+    Pure function — 唔做任何 IO。
+    """
+    idx = {key: i for i, key in enumerate(sparse_keys)}
+    kept = [r for r in routes if f"{r['origin']}-{r['dest']}" in idx]
+    kept.sort(key=lambda r: idx[f"{r['origin']}-{r['dest']}"])
+    return kept
+
+
 def budget_reached(q_done: int, budget: int | None) -> bool:
     """當 q_done >= budget 時回 True。budget falsy(0 / None)永遠 False(無上限)。
     Pure function。
@@ -599,12 +610,26 @@ def main() -> int:
                     help="--grid 模式下每隔幾日抽一個樣本(1=每日,3=每3日;daily coarse 用)")
     ap.add_argument("--workers", type=int, default=2,
                     help="route 層並行數(預設 2;1 = 順序跑)。每條 worker 各自一個 browser(D-OPT-01)")
+    ap.add_argument("--refill", action="store_true",
+                    help="補掃模式:只重掃 db 揾到嘅稀疏/過時 route,溫柔啲(workers=1 + delay ×2)博繞過封鎖")
+    ap.add_argument("--refill-min-periods", type=int, default=5,
+                    help="--refill:總 periods 少過呢個數就當稀疏(預設 5)")
+    ap.add_argument("--refill-stale-days", type=int, default=3,
+                    help="--refill:scanned_at 舊過呢個日數就當過時(預設 3)")
+    ap.add_argument("--delay-mult", type=float, default=1.0,
+                    help="per-query delay 乘數(>1 = 慢啲溫柔啲;--refill 預設變 2.0)")
     args = ap.parse_args()
 
     cfg = yaml.safe_load((ROOT / "routes.yaml").read_text(encoding="utf-8"))
     dfl = cfg.get("defaults") or {}
     currency = str(dfl.get("currency", "HKD"))
     delay_lo, delay_hi = (dfl.get("delay_seconds") or [3, 8])[:2]
+    # 溫柔模式:--refill 預設將 delay ×2(慢啲 = 對單一 IP 嘅請求率更低,博繞過封鎖)
+    delay_mult = args.delay_mult
+    if args.refill and delay_mult <= 1.0:
+        delay_mult = 2.0
+    delay_lo *= delay_mult
+    delay_hi *= delay_mult
     samples = args.samples or int(dfl.get("samples_per_month", 2))
     samples = max(1, min(4, samples))
 
@@ -617,6 +642,14 @@ def main() -> int:
     if args.only:
         want = args.only.strip().upper()
         routes = [r for r in routes if f"{r['origin']}-{r['dest']}" == want]
+    if args.refill:
+        import db as _db
+        sparse = _db.sparse_routes(min_periods=args.refill_min_periods,
+                                   stale_days=args.refill_stale_days)
+        sparse_keys = [f"{r['origin']}-{r['destination']}" for r in sparse]
+        routes = filter_to_sparse(routes, sparse_keys)
+        log(f"[scan] --refill: db 揾到 {len(sparse_keys)} 條稀疏/過時 route,只掃呢啲(sparsest 先);"
+            f"溫柔模式 workers=1, delay ×{delay_mult:g}")
     if args.slice:
         parts = args.slice.split("/")
         if len(parts) != 2:
@@ -660,7 +693,7 @@ def main() -> int:
         except Exception as e:
             log(f"[scan] resume 讀檔失敗({type(e).__name__})— 由頭掃過")
 
-    workers = max(1, args.workers)
+    workers = 1 if args.refill else max(1, args.workers)  # 補掃溫柔:強制單 worker
     total_q = len(routes) * len(months) * len(sample_days)
     est_min = total_q * (((delay_lo + delay_hi) / 2) + 3) / 60 / workers
     log(f"[scan] {len(routes)} 條 route × {len(months)} 個月 × 每月 {len(sample_days)} 個取樣日"
@@ -682,7 +715,8 @@ def main() -> int:
                    "resumed": bool(old_recs),
                    "stale_first": args.stale_first,
                    "budget": args.budget,
-                   "grid_step": args.grid_step},
+                   "grid_step": args.grid_step,
+                   "refill": args.refill},
         "stats": {"queries": 0, "ok": 0, "no_flights": 0, "failed": 0,
                   "beyond_data": 0, "tier2_used": 0, "tier2_saved": 0,
                   "resumed_months": 0},
