@@ -18,7 +18,7 @@ export default function DestinationCard({
   const info = airportInfo(destination);
   const oInfo = airportInfo(origin);
   const cur = flights[0]?.currency ?? "HKD";
-  const { min, cheapCount, stayRange, lastScan } = cardStats(flights);
+  const { min, cheapCount, stayRange, lastScan } = cardStats(flights, selectedDays);
 
   return (
     <details className="glass-card rounded-2xl overflow-hidden">

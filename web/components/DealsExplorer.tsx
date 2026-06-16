@@ -66,8 +66,8 @@ export default function DealsExplorer({ groups }: { groups: DealGroup[] }) {
   // 揀咗 2+ 出發地 → 合併比價(每個目的地一張卡,各出發地一行價)
   const compareMode = origins.length >= 2;
   const destGroups = useMemo(
-    () => (compareMode ? groupByDestination(shown) : []),
-    [compareMode, shown]
+    () => (compareMode ? groupByDestination(shown, days) : []),
+    [compareMode, shown, days]
   );
 
   const reset = () => {

@@ -44,7 +44,15 @@ export default function MonthGrid({
   selectedDays?: number[];
   currency: string;
 }) {
-  const all = flatPeriods(flights);
+  // 先按 selectedDays 篩 periods,然後先計每月 mMin + 分層 → 最平嗰個符合日數嘅 period
+  // 一定係 tier0(顯示),唔會出現「揀咗日數但成個月畀 tier filter 隱埋」嘅空 grid。
+  let all = flatPeriods(flights);
+  if (selectedDays.length) {
+    all = all.filter((x) => {
+      const d = stayDays(x.p);
+      return d != null && selectedDays.includes(d);
+    });
+  }
   const byMonth = new Map<string, Period[]>();
   for (const { month, p } of all) {
     const arr = byMonth.get(month) ?? [];
@@ -66,11 +74,6 @@ export default function MonthGrid({
             <div className="flex flex-wrap gap-1.5">
               {sorted
                 .filter((p) => p.price != null && priceTier(p.price, mMin) < 3)
-                .filter(
-                  (p) =>
-                    selectedDays.length === 0 ||
-                    (stayDays(p) != null && selectedDays.includes(stayDays(p)!))
-                )
                 .map((p, i) => {
                   const c = TIERS[priceTier(p.price!, mMin)];
                   return (

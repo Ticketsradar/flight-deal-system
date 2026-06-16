@@ -38,8 +38,16 @@ export interface CardStats {
   lastScan: string | null;
 }
 
-export function cardStats(flights: CheapFlight[]): CardStats {
-  const all = flatPeriods(flights);
+export function cardStats(flights: CheapFlight[], selectedDays: number[] = []): CardStats {
+  let all = flatPeriods(flights);
+  if (selectedDays.length) {
+    // 跟 days filter:headline 最平價 / 最平日數 / 行程範圍 只計符合日數嘅 period,
+    // 先唔會出現「廣告價係一個冇顯示嘅行程日數」
+    all = all.filter((x) => {
+      const d = stayDays(x.p);
+      return d != null && selectedDays.includes(d);
+    });
+  }
   const prices = all.map((x) => x.p.price ?? Infinity).filter((p) => p < Infinity);
   const min = prices.length ? Math.min(...prices) : 0;
   const cheapCount = all.filter((x) => (x.p.price ?? Infinity) <= min * 1.04).length;

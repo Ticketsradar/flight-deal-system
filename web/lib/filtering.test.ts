@@ -1,6 +1,43 @@
 import { describe, it, expect } from "vitest";
-import { periodDays, groupMatchesDays, STALE_DAYS, isStale, splitColumns, groupByDestination, type DealGroup } from "@/lib/filtering";
-import type { Period } from "@/lib/types";
+import { periodDays, groupMatchesDays, STALE_DAYS, isStale, splitColumns, groupByDestination, minForDays, type DealGroup } from "@/lib/filtering";
+import type { CheapFlight, Period } from "@/lib/types";
+
+// CheapFlight with periods, for day-aware tests
+const cf = (origin: string, destination: string, periods: Period[]): CheapFlight =>
+  ({ id: 0, origin, destination, region: null, depart_date: null, return_date: null,
+     price_hkd: null, currency: "HKD", airline: null, baggage: null, month: "2026-08",
+     gflights_url: null, tripcom_url: null, periods, scanned_at: "2026-06-15T00:00:00Z" });
+const per = (days: number, price: number): Period =>
+  ({ depart: "2026-08-01", return: "2026-08-01", price, days });
+
+describe("minForDays", () => {
+  const flights = [cf("HKG", "NRT", [per(5, 2000), per(9, 1200)])];
+  it("no day filter → cheapest of all periods", () => {
+    expect(minForDays(flights, [])).toBe(1200);
+  });
+  it("day filter → cheapest among matching-length periods only", () => {
+    expect(minForDays(flights, [5])).toBe(2000); // 9-day @1200 excluded
+  });
+  it("no matching length → Infinity", () => {
+    expect(minForDays(flights, [7])).toBe(Infinity);
+  });
+});
+
+describe("groupByDestination day-aware", () => {
+  it("drops origins with no matching-day period; min reflects the filter", () => {
+    const groups: DealGroup[] = [
+      { origin: "HKG", destination: "NRT", continent: "亞洲", min: 1200,
+        flights: [cf("HKG", "NRT", [per(5, 2000), per(9, 1200)])] },
+      { origin: "SZX", destination: "NRT", continent: "亞洲", min: 1100,
+        flights: [cf("SZX", "NRT", [per(9, 1100)])] }, // only 9-day
+    ];
+    const out = groupByDestination(groups, [5]); // want 5-day trips
+    const nrt = out.find((d) => d.destination === "NRT")!;
+    expect(nrt.origins.map((o) => o.origin)).toEqual(["HKG"]); // SZX dropped (no 5-day)
+    expect(nrt.origins[0].min).toBe(2000); // HKG's 5-day price, not its all-periods 1200
+    expect(nrt.min).toBe(2000);
+  });
+});
 
 describe("groupByDestination", () => {
   const g = (origin: string, destination: string, min: number): DealGroup => ({
@@ -8,7 +45,7 @@ describe("groupByDestination", () => {
     destination,
     continent: "亞洲",
     min,
-    flights: [],
+    flights: [cf(origin, destination, [per(7, min)])], // min 來自 flights 嘅 period 價
   });
 
   it("collapses by destination; origins cheapest-first; dest groups sorted by min", () => {
